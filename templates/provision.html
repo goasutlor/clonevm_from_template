@@ -1,0 +1,4041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VM Provisioning - Deploy VMs</title>
+    <style>
+        /* CSS styles remain the same as previous version */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logo-text h1 {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .logo-text p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .provision-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .logs-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logs-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #28a745, #20c997);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input.error,
+        .form-group select.error {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+            background: #fff5f5 !important;
+        }
+
+        .validation-error {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .flash-error.validation {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+            border-left-width: 5px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .required {
+            color: #dc3545;
+        }
+
+        .network-display {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #f8f9fa;
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+        }
+
+        .network-zone-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .zone-icon {
+            font-size: 18px;
+        }
+
+        .network-zone-indicator.detected {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .network-zone-indicator.waiting {
+            color: #666;
+            font-style: italic;
+        }
+
+        .network-display.detected {
+            background: #f8fff8;
+            border-color: #28a745;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .network-zones-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .network-zone-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .nic-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .zone-name {
+            color: #28a745;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .config-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .individual-nodes {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .node-config {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+
+        .node-config:last-child {
+            margin-bottom: 0;
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .node-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .node-number {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            min-width: 25px;
+            text-align: center;
+        }
+
+        .remove-node {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .remove-node:hover {
+            background: #c82333;
+        }
+
+        .node-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .ip-config {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .ip-config h5 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .ip-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .ip-label {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .ip-input {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* Individual node IP fields styling */
+        .ip-config .form-group {
+            margin-bottom: 15px;
+        }
+
+        .ip-config .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .ip-config .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .ip-config .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .add-node {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .add-node:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .nic-fields {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 15px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .nic-field {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .nic-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .nic-label {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .provision-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .provision-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .provision-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .logs-container {
+            flex: 1;
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            max-height: 500px;
+            min-height: 200px;
+        }
+
+        .clear-logs {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .clear-logs:hover {
+            background: #5a6268;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .flash-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .flash-info {
+            background: #cce7ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .form-tips {
+            background: #e3f2fd;
+            color: #0d47a1;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .form-tips h4 {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .form-tips ul {
+            margin-left: 20px;
+        }
+
+        .form-tips li {
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .preview-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .preview-btn:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        .demo-notice {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            color: #1976d2;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #bbdefb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-summary {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #e9ecef;
+            display: none;
+        }
+
+        .config-summary h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .summary-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        .summary-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .summary-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .summary-table tr:hover {
+            background: #e3f2fd;
+        }
+
+        /* ===== STATUS TABLE STYLES ===== */
+        .status-table-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .status-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .status-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .status-table tr:hover {
+            background: #e3f2fd;
+        }
+
+        .vm-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .vm-status.pending {
+            background: #ffeaa7;
+            color: #e17055;
+        }
+
+        .vm-status.provisioning {
+            background: #74b9ff;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .vm-status.success {
+            background: #00b894;
+            color: white;
+        }
+
+        .vm-status.failed {
+            background: #e17055;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+        
+        .progress-fill.success {
+            background: linear-gradient(90deg, #28a745, #20c997);
+        }
+        
+        .progress-fill.failed {
+            background: linear-gradient(90deg, #dc3545, #fd7e14);
+        }
+
+        /* ===== NAVIGATION MENU STYLES ===== */
+        .nav-menu {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e0e0e0;
+        }
+
+        .nav-menu.show {
+            display: block;
+        }
+
+        .nav-menu h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .nav-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .nav-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-btn.secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .nav-btn.secondary:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+        }
+
+        /* ===== SUCCESS COMPLETION MENU STYLES ===== */
+        .completion-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .completion-overlay.show {
+            display: flex;
+        }
+
+        .completion-menu {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            animation: slideInUp 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .completion-header {
+            margin-bottom: 30px;
+        }
+
+        .completion-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+            margin: 0 auto 20px auto;
+            animation: bounceIn 0.8s ease;
+        }
+
+        @keyframes bounceIn {
+            0%, 20%, 40%, 60%, 80% {
+                animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+            }
+            0% {
+                opacity: 0;
+                transform: scale3d(.3, .3, .3);
+            }
+            20% {
+                transform: scale3d(1.1, 1.1, 1.1);
+            }
+            40% {
+                transform: scale3d(.9, .9, .9);
+            }
+            60% {
+                opacity: 1;
+                transform: scale3d(1.03, 1.03, 1.03);
+            }
+            80% {
+                transform: scale3d(.97, .97, .97);
+            }
+            100% {
+                opacity: 1;
+                transform: scale3d(1, 1, 1);
+            }
+        }
+
+        .completion-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .completion-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .completion-stats {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .stat-success .stat-number { color: #00b894; }
+        .stat-failed .stat-number { color: #e17055; }
+        .stat-total .stat-number { color: #667eea; }
+
+        .completion-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .completion-btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .completion-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .completion-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .completion-btn.success {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+        }
+
+        .completion-btn.success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 184, 148, 0.4);
+        }
+
+        .completion-btn.secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .completion-btn.secondary:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .completion-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .completion-close:hover {
+            color: #333;
+        }
+
+        .node-name {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .hostname {
+            color: #28a745;
+            font-family: monospace;
+        }
+
+        .ip-address {
+            color: #dc3545;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .empty-value {
+            color: #999;
+            font-style: italic;
+        }
+
+        .summary-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .edit-config {
+            background: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .edit-config:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+
+        .infrastructure-summary {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #dee2e6;
+        }
+
+        .infrastructure-summary h5 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .infra-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .infra-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .infra-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1024px) {
+            .provision-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .logs-card {
+                order: 2;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px 10px;
+            }
+        }
+
+        .hidden { display: none !important; }
+        .flex-row { display: flex; gap: 15px; margin-top: 20px; }
+        .flex-gap-10 { display: flex; gap: 10px; }
+        .margin-top-20 { margin-top: 20px; }
+        .margin-top-10 { margin-top: 10px; }
+        .margin-bottom-15 { margin-bottom: 15px; }
+        .font-size-12 { font-size: 12px; }
+        .font-size-14 { font-size: 14px; }
+        .font-size-10 { font-size: 10px; }
+        .opacity-08 { opacity: 0.8; }
+        .opacity-07 { opacity: 0.7; }
+        .color-666 { color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">VM</div>
+                <div class="logo-text">
+                    <h1>VM Provisioning</h1>
+                    <p>Deploy Virtual Machines</p>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/provision" class="nav-link active">Provision</a>
+                <a href="/logout" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="demo-notice">
+            <strong>🎯 Smart Network Detection:</strong> Network zones are automatically detected based on your selected template!
+        </div>
+
+        <div class="flash-messages">
+            <!-- Flash messages will be shown here -->
+        </div>
+
+        <div class="provision-layout">
+            <div class="form-card">
+                <div class="card-header">
+                    <h2 class="card-title">VM Provisioning</h2>
+                    <div class="card-icon">🚀</div>
+                </div>
+
+                <form method="post" id="provisionForm">
+                    <div class="form-section">
+                        <h3>🏗️ Template & Infrastructure</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="template">Template <span class="required">*</span></label>
+                                <select name="template" id="template" required>
+                                    <option value="">Select a template...</option>
+                                    <option value="CentOS-8-Template">CentOS-8-Template</option>
+                                    <option value="Ubuntu-20.04-Template">Ubuntu-20.04-Template</option>
+                                    <option value="Windows-Server-2019">Windows-Server-2019</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="datacenter">Datacenter <span class="required">*</span></label>
+                                <select name="datacenter" id="datacenter" required>
+                                    <option value="">Select datacenter...</option>
+                                    <option value="DataCenter-Primary">DataCenter-Primary</option>
+                                    <option value="DataCenter-Secondary">DataCenter-Secondary</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cluster">Cluster <span class="required">*</span></label>
+                                <select name="cluster" id="cluster" required>
+                                    <option value="">Select cluster...</option>
+                                    <option value="Cluster-Production">Cluster-Production</option>
+                                    <option value="Cluster-Development">Cluster-Development</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="network">Network Zones (Auto-detected)</label>
+                                <div id="networkDisplay" class="network-display">
+                                    <div class="network-zone-indicator waiting">
+                                        <span id="detectedNetwork">Select a template to detect network zones</span>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="network" id="network">
+                                <input type="hidden" name="network_zones" id="networkZones">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>🖥️ VM Configuration</h3>
+                        <div class="config-toggle">
+                            <label class="toggle-switch" for="individualConfig" title="Enable individual node configuration">
+                                <input type="checkbox" id="individualConfig" aria-label="Individual Node Configuration">
+                                <span class="slider"></span>
+                            </label>
+                            <span>Individual Node Configuration</span>
+                        </div>
+
+                        <div id="bulkConfig">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prefix">VM Name Prefix <span class="required">*</span></label>
+                                    <input type="text" name="prefix" id="prefix" placeholder="e.g., test" required pattern="[a-zA-Z0-9\-_]+" value="test">
+                                </div>
+                                <div class="form-group">
+                                    <label for="count">Number of VMs <span class="required">*</span></label>
+                                    <input type="number" name="count" id="count" min="1" max="50" value="5" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hostname">Hostname Prefix</label>
+                                    <input type="text" name="hostname" id="hostname" placeholder="e.g., webserver" pattern="[a-zA-Z0-9\-_.]+">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="individualNodes" class="individual-nodes" style="display: none;">
+                            <div class="node-config" id="node_1">
+                                <div class="node-header">
+                                    <div class="node-title">
+                                        <span class="node-number">1</span>
+                                        Node 1 Configuration
+                                    </div>
+                                </div>
+                                <div class="node-fields">
+                                    <div class="form-group">
+                                        <label for="node_1_name">VM Name <span class="required">*</span></label>
+                                        <input type="text" name="node_1_name" id="node_1_name" placeholder="e.g., WebServer01" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="node_1_hostname">Hostname</label>
+                                        <input type="text" name="node_1_hostname" id="node_1_hostname" placeholder="e.g., webserver01.domain.com">
+                                    </div>
+                                </div>
+                                <div class="ip-config">
+                                    <h5>🌐 Network Configuration</h5>
+                                    <div id="node_1_ips">
+                                        <!-- IP fields will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="add-node" id="addNode" style="display: none;">
+                            ➕ Add Another Node
+                        </button>
+                    </div>
+
+                    <div class="form-section" id="networkSection">
+                        <h3>🌐 Network Configuration</h3>
+                        <div id="nic-fields" class="nic-fields">
+                            <p class="margin-bottom-15 color-666 font-size-14">
+                                <strong>Starting IP addresses</strong> for each network interface (will auto-increment for each VM)
+                            </p>
+                            <div class="nic-field">
+                                <span class="nic-label">NIC 1</span>
+                                <input type="text" name="ip1" placeholder="10.10.10.10 (starting IP)" pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+                            </div>
+                            <div class="nic-field">
+                                <span class="nic-label">NIC 2</span>
+                                <input type="text" name="ip2" placeholder="10.20.10.10 (starting IP)" pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-summary" id="configSummary">
+                        <h4>📋 Provisioning Summary</h4>
+                        
+                        <div class="infrastructure-summary">
+                            <h5>🏗️ Infrastructure Configuration</h5>
+                            <div class="infra-item">
+                                <span class="infra-label">Template:</span>
+                                <span class="infra-value" id="summaryTemplate">-</span>
+                            </div>
+                            <div class="infra-item">
+                                <span class="infra-label">Datacenter:</span>
+                                <span class="infra-value" id="summaryDatacenter">-</span>
+                            </div>
+                            <div class="infra-item">
+                                <span class="infra-label">Cluster:</span>
+                                <span class="infra-value" id="summaryCluster">-</span>
+                            </div>
+                            <div class="infra-item">
+                                <span class="infra-label">Network Zone:</span>
+                                <span class="infra-value" id="summaryNetwork">-</span>
+                            </div>
+                        </div>
+
+                        <table class="summary-table" id="summaryTable">
+                            <thead>
+                                <tr>
+                                    <th>Node</th>
+                                    <th>VM Name</th>
+                                    <th>Hostname</th>
+                                    <th>Network IPs</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summaryTableBody">
+                                <!-- Summary rows will be generated by JavaScript -->
+                            </tbody>
+                        </table>
+
+                        <div class="summary-actions">
+                            <button type="button" class="edit-config" onclick="editConfiguration()">
+                                ✏️ Edit Configuration
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex-row">
+                        <button type="button" class="preview-btn" onclick="previewConfiguration()">
+                            👁️ Preview Configuration
+                        </button>
+                        <button type="submit" class="provision-btn" id="provisionBtn">
+                            <span id="btnText">🚀 Start Provisioning</span>
+                            <div class="loading-spinner" id="spinner"></div>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="form-tips">
+                    <h4>💡 Smart Multi-NIC Network Detection</h4>
+                    <ul>
+                        <li><strong>Auto-Detection:</strong> Network zones for all NICs are automatically detected based on template</li>
+                        <li><strong>CentOS/Ubuntu:</strong> NIC1→Web-VLAN-100, NIC2→Management-VLAN-200</li>
+                        <li><strong>Windows Server:</strong> NIC1→Management-VLAN-200, NIC2→Database-VLAN-300</li>
+                        <li><strong>Bulk Mode:</strong> Enter starting IP addresses - they will auto-increment for each VM</li>
+                        <li><strong>Individual Mode:</strong> Set specific IP addresses for each VM and NIC</li>
+                        <li>Leave IP fields blank for DHCP assignment</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="logs-card">
+                <div class="card-header">
+                    <h3>📊 Provisioning Logs</h3>
+                    <button type="button" class="clear-logs" onclick="clearLogs()">Clear</button>
+                </div>
+                <div id="logs" class="logs-container">Ready for VM provisioning!
+Configure your VMs and click "Preview Configuration" to see the summary.
+
+🎯 NEW: Smart Network Detection
+- Select template → Network zone auto-detected
+- No more manual network selection needed!
+
+Example configuration:
+- Template: CentOS-8-Template → Auto-detects Web-VLAN-100
+- Prefix: test, Count: 5
+- Starting IPs: 10.10.10.10, 10.20.10.10
+- Result: test01 (10.10.10.10, 10.20.10.10), test02 (10.10.10.11, 10.20.10.11), etc.
+                </div>
+            </div>
+
+            <!-- Real-time VM Status Table -->
+            <div class="status-table-container" id="statusTableContainer">
+                <div class="card-header">
+                    <h3>🖥️ VM Provisioning Status</h3>
+                </div>
+                <table class="status-table" id="statusTable">
+                    <thead>
+                        <tr>
+                            <th>VM Name</th>
+                            <th>Hostname</th>
+                            <th>Network IPs</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statusTableBody">
+                        <!-- Status rows will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <div class="nav-menu" id="navMenu">
+            <h4>🎯 Quick Actions</h4>
+            <div class="nav-buttons">
+                <a href="/provision" class="nav-btn primary">
+                    🚀 New Provisioning
+                </a>
+                <button onclick="viewLogs()" class="nav-btn secondary">
+                    📊 View Full Logs
+                </button>
+                <button onclick="exportResults()" class="nav-btn secondary">
+                    💾 Export Results
+                </button>
+                <a href="/dashboard" class="nav-btn secondary">
+                    🏠 Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Success Completion Menu -->
+        <div class="completion-overlay" id="completionOverlay">
+            <div class="completion-menu">
+                <button class="completion-close" onclick="closeCompletionMenu()">&times;</button>
+                
+                <div class="completion-header">
+                    <div class="completion-icon">✅</div>
+                    <h2 class="completion-title">Provisioning Complete!</h2>
+                    <p class="completion-subtitle">All virtual machines have been successfully provisioned</p>
+                </div>
+
+                <div class="completion-stats">
+                    <div class="stat-item stat-total">
+                        <div class="stat-number" id="totalVMs">0</div>
+                        <div class="stat-label">Total VMs</div>
+                    </div>
+                    <div class="stat-item stat-success">
+                        <div class="stat-number" id="successVMs">0</div>
+                        <div class="stat-label">Successful</div>
+                    </div>
+                    <div class="stat-item stat-failed">
+                        <div class="stat-number" id="failedVMs">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                </div>
+
+                <div class="completion-actions">
+                    <button class="completion-btn primary" onclick="startNewProvisioning()">
+                        🚀 Provision More VMs <span class="font-size-12 opacity-08">(Press N)</span>
+                    </button>
+                    
+                    <button class="completion-btn success" onclick="viewVMDetails()">
+                        🖥️ View VM Details <span class="font-size-12 opacity-08">(Press V)</span>
+                    </button>
+                    
+                    <div class="flex-gap-10">
+                        <button class="completion-btn secondary" onclick="exportResults()">
+                            💾 Export Results
+                        </button>
+                        <a href="/dashboard" class="completion-btn secondary">
+                            🏠 Dashboard <span class="font-size-10 opacity-07">(Press D)</span>
+                        </a>
+                    </div>
+                    
+                    <button class="completion-btn secondary margin-top-10" onclick="closeCompletionMenu()">
+                        ⚡ Continue Working <span class="font-size-12 opacity-08">(Press Esc)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let isProvisioning = false;
+        let nodeCount = 1;
+        let nicCount = 2; // Assuming 2 NICs for simplicity, adjust based on actual template NICs
+        let provisionTimeout = null; // Variable to hold the timeout ID
+        // เพิ่มตัวแปร global
+        let lastProvisionedVMs = null;
+
+        // Helper function to display flash messages
+        function displayFlashMessage(message, category, isValidation = false) {
+            const flashContainer = document.querySelector('.flash-messages');
+            const flashDiv = document.createElement('div');
+            flashDiv.className = `flash-message flash-${category}${isValidation ? ' validation' : ''}`;
+            let icon = '';
+            if (category === 'success') icon = '✅';
+            else if (category === 'error') icon = '❌';
+            else icon = 'ℹ️';
+            flashDiv.innerHTML = `${icon} ${message}`;
+            flashContainer.appendChild(flashDiv);
+
+            // Scroll to flash message for validation errors
+            if (isValidation) {
+                flashDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // Automatically remove after 8 seconds for validation errors, 5 seconds for others
+            setTimeout(() => {
+                if (flashDiv.parentNode) {
+                    flashDiv.remove();
+                }
+            }, isValidation ? 8000 : 5000);
+        }
+
+        // ===== STATUS TABLE MANAGEMENT =====
+        let vmStatusData = {}; // Store VM status information
+        
+        function initializeStatusTable(vmConfigs) {
+            console.log('🔧 Initializing status table with configs:', vmConfigs);
+            
+            const statusContainer = document.getElementById('statusTableContainer');
+            const statusTableBody = document.getElementById('statusTableBody');
+            
+            if (!statusContainer || !statusTableBody) {
+                console.error('❌ Status table elements not found!');
+                return;
+            }
+            
+            // Clear existing table and vmStatusData for fresh start
+            console.log('🔧 vmStatusData before clearing table:', vmStatusData);
+            console.log('🔧 vmStatusData keys before clearing table:', Object.keys(vmStatusData));
+            
+            // Reset vmStatusData for fresh provisioning session
+            vmStatusData = {};
+            console.log('🔧 vmStatusData cleared for fresh start');
+            
+            statusTableBody.innerHTML = '';
+            
+            // Create status rows for each VM
+            vmConfigs.forEach(vmConfig => {
+                // Normalize key
+                const key = (vmConfig.name || '').trim().toLowerCase();
+                console.log('🔧 Processing VM config:', vmConfig.name, 'key:', key);
+                
+                // ถ้า vmStatusData[key] ยังไม่มี ให้สร้างใหม่
+                if (!vmStatusData[key]) {
+                    vmStatusData[key] = {
+                        name: vmConfig.name,
+                        hostname: vmConfig.hostname || `${vmConfig.name.toLowerCase()}.local`,
+                        ips: vmConfig.ips || {},
+                        status: vmConfig.status || 'pending',
+                        progress: vmConfig.progress || 0
+                    };
+                    console.log('🔧 Created vmStatusData entry for:', key, vmStatusData[key]);
+                } else {
+                    console.log('🔧 vmStatusData entry already exists for:', key, vmStatusData[key]);
+                }
+                
+                // Format IPs for display
+                let ipsDisplay = '-';
+                if (vmStatusData[key].ips) {
+                    if (typeof vmStatusData[key].ips === 'string') {
+                        ipsDisplay = vmStatusData[key].ips;
+                    } else if (typeof vmStatusData[key].ips === 'object') {
+                        const ipValues = Object.values(vmStatusData[key].ips).filter(ip => ip);
+                        ipsDisplay = ipValues.length > 0 ? ipValues.join(', ') : 'DHCP';
+                    }
+                } else {
+                    ipsDisplay = 'DHCP';
+                }
+                
+                // Create table row
+                const row = document.createElement('tr');
+                row.id = `status-row-${vmConfig.name}`;
+                row.innerHTML = `
+                    <td class="node-name">${vmConfig.name}</td>
+                    <td class="hostname">${vmStatusData[key].hostname}</td>
+                    <td>${ipsDisplay}</td>
+                    <td>
+                        <div class="vm-status ${vmStatusData[key].status}" id="status-${vmConfig.name}">
+                            ${getStatusText(vmStatusData[key].status)}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-${vmConfig.name}" style="width: ${vmStatusData[key].progress}%"></div>
+                        </div>
+                        <small id="progress-text-${vmConfig.name}">${getProgressText(vmStatusData[key].progress)}</small>
+                    </td>
+                `;
+                statusTableBody.appendChild(row);
+                console.log('🔧 Created table row for:', vmConfig.name);
+            });
+            
+            // Show status table
+            statusContainer.style.display = 'block';
+            console.log('✅ Status table initialized successfully');
+            console.log('🔧 vmStatusData after initialization:', vmStatusData);
+            console.log('🔧 vmStatusData keys after initialization:', Object.keys(vmStatusData));
+        }
+        
+        function updateVMStatus(vmName, status, progress = null, message = null) {
+            const key = (vmName || '').trim().toLowerCase();
+            console.log('🟢 [DEBUG] updateVMStatus called for', vmName, 'key:', key, { status, progress, message });
+            console.log('🟢 [DEBUG] vmStatusData before update:', vmStatusData);
+            // Ensure VM exists in status data
+            if (!vmStatusData[key]) {
+                console.warn('⚠️ [DEBUG] Adding', key, 'to vmStatusData');
+                vmStatusData[key] = {
+                    name: key,
+                    hostname: `${key}.local`,
+                    ips: {},
+                    status: 'pending',
+                    progress: 0
+                };
+            }
+            
+            // Prevent progress from going backwards
+            const currentProgress = vmStatusData[key].progress || 0;
+            if (progress !== null && progress < currentProgress) {
+                console.log('🟢 [DEBUG] Skipping progress update - new progress:', progress, 'current progress:', currentProgress);
+                return;
+            }
+            // Get DOM elements (force re-query)
+            let statusElement = document.getElementById(`status-${vmStatusData[key].name}`);
+            let progressElement = document.getElementById(`progress-${vmStatusData[key].name}`);
+            let progressTextElement = document.getElementById(`progress-text-${vmStatusData[key].name}`);
+            let row = document.getElementById(`status-row-${vmStatusData[key].name}`);
+            console.log('🟢 [DEBUG] DOM elements:', { statusElement, progressElement, progressTextElement, row });
+            // If row or elements not found, force create row
+            if (!row) {
+                const statusTableBody = document.getElementById('statusTableBody');
+                if (statusTableBody) {
+                    row = document.createElement('tr');
+                    row.id = `status-row-${vmStatusData[key].name}`;
+                    row.innerHTML = `
+                        <td class="node-name">${vmStatusData[key].name}</td>
+                        <td class="hostname">${vmStatusData[key].hostname}</td>
+                        <td>-</td>
+                        <td><div class="vm-status ${status}" id="status-${vmStatusData[key].name}">${getStatusText(status)}</div></td>
+                        <td><div class="progress-bar"><div class="progress-fill" id="progress-${vmStatusData[key].name}" style="width: ${progress || 0}%"></div></div><small id="progress-text-${vmStatusData[key].name}">${getProgressText(progress || 0)}</small></td>
+                    `;
+                    statusTableBody.appendChild(row);
+                    console.log('🟢 [DEBUG] Force created row for', key);
+                } else {
+                    console.error('❌ [DEBUG] statusTableBody not found in DOM');
+                }
+            }
+            // Re-query elements after force create
+            statusElement = document.getElementById(`status-${vmStatusData[key].name}`);
+            progressElement = document.getElementById(`progress-${vmStatusData[key].name}`);
+            progressTextElement = document.getElementById(`progress-text-${vmStatusData[key].name}`);
+            // Update status data
+            vmStatusData[key].status = status;
+            if (progress !== null) {
+                vmStatusData[key].progress = progress;
+            }
+            // Update DOM elements with error handling
+            if (statusElement) {
+                statusElement.className = `vm-status ${status}`;
+                statusElement.textContent = getStatusText(status);
+                console.log(`🟢 [DEBUG] Updated status element for ${key}:`, status);
+            } else {
+                console.error(`❌ [DEBUG] status-${vmStatusData[key].name} element not found in DOM`);
+            }
+            if (progressElement) {
+                progressElement.style.width = `${vmStatusData[key].progress}%`;
+                progressElement.className = 'progress-fill';
+                if (status === 'success') {
+                    progressElement.classList.add('success');
+                } else if (status === 'failed') {
+                    progressElement.classList.add('failed');
+                }
+                console.log(`🟢 [DEBUG] Updated progress element for ${key}:`, vmStatusData[key].progress + '%');
+            } else {
+                console.error(`❌ [DEBUG] progress-${vmStatusData[key].name} element not found in DOM`);
+            }
+            if (progressTextElement) {
+                progressTextElement.textContent = getProgressText(vmStatusData[key].progress);
+            } else {
+                console.error(`❌ [DEBUG] progress-text-${vmStatusData[key].name} element not found in DOM`);
+            }
+            console.log(`🟢 [DEBUG] Updated VM ${key}: status=${status}, progress=${vmStatusData[key].progress}%`);
+            console.log('🟢 [DEBUG] vmStatusData after update:', vmStatusData);
+            console.log('🟢 [DEBUG] DOM elements after update:', {
+                statusElement: document.getElementById(`status-${vmStatusData[key].name}`),
+                progressElement: document.getElementById(`progress-${vmStatusData[key].name}`),
+                progressTextElement: document.getElementById(`progress-text-${vmStatusData[key].name}`),
+                row: document.getElementById(`status-row-${vmStatusData[key].name}`)
+            });
+        }
+        
+        /**
+         * Helper function to get status text
+         */
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Pending',
+                'provisioning': 'Provisioning',
+                'success': 'Success',
+                'failed': 'Failed'
+            };
+            return statusMap[status] || status;
+        }
+        
+        /**
+         * Helper function to get progress text
+         */
+        function getProgressText(progress) {
+            if (progress === 100) return 'Complete!';
+            if (progress === 0) return 'Waiting...';
+            return `${progress}%`;
+        }
+        
+        function updateVMIPsCell(vmName) {
+            const key = (vmName || '').trim().toLowerCase();
+            const row = document.getElementById(`status-row-${vmName}`);
+            if (row && vmStatusData[key]) {
+                const ipsCell = row.querySelector('td:nth-child(3)');
+                if (ipsCell) {
+                    let ipsDisplay = '-';
+                    const ipsVal = vmStatusData[key].ips;
+                    if (ipsVal) {
+                        if (typeof ipsVal === 'string') {
+                            ipsDisplay = ipsVal;
+                        } else if (typeof ipsVal === 'object') {
+                            const ipValues = Object.values(ipsVal).filter(ip => ip);
+                            ipsDisplay = ipValues.length > 0 ? ipValues.join(', ') : 'DHCP';
+                        }
+                    }
+                    ipsCell.textContent = ipsDisplay;
+                }
+            }
+            console.log('updateVMIPsCell: keys in vmStatusData:', Object.keys(vmStatusData));
+        }
+        
+        function parseLogForVMUpdates(logMessage) {
+            console.log('🟢 [DEBUG] parseLogForVMUpdates called with:', logMessage);
+            console.log('🟢 [DEBUG] vmStatusData keys:', Object.keys(vmStatusData));
+            console.log('🔍 Log message length:', logMessage.length);
+            console.log('🔍 Log message type:', typeof logMessage);
+            
+            // Parse log messages to update VM status
+            // Demo Mode patterns:
+            // "🚀 Starting VM 1/3: test01"
+            // "📋 Validating configuration for test01"
+            // "🌐 Detecting network zones for test01"
+            // "💾 Cloning template for test01"
+            // "⚙️ Applying customization for test01"
+            // "🔧 Configuring network for test01"
+            // "✅ VM test01 ready!"
+            
+
+
+            // New patterns for actual backend log messages
+            // Pattern for "🚀 Starting VM 1/5: test01"
+            const vmStartPattern = logMessage.match(/🚀 Starting VM (\d+)\/(\d+): (\w+)/);
+            if (vmStartPattern) {
+                const vmName = vmStartPattern[3];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM start detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                updateVMStatus(vmName, 'provisioning', 10, 'Starting...');
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "📋 Validating configuration for test01"
+            const vmValidatePattern = logMessage.match(/📋 Validating configuration for (\w+)/);
+            if (vmValidatePattern) {
+                const vmName = vmValidatePattern[1];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM validation detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                updateVMStatus(vmName, 'provisioning', 20, 'Validating...');
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "🌐 Detecting network zones for test01"
+            const vmNetworkPattern = logMessage.match(/🌐 Detecting network zones for (\w+)/);
+            if (vmNetworkPattern) {
+                const vmName = vmNetworkPattern[1];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM network detection detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                    // Only update if current progress is less than 30%
+                    const currentProgress = vmStatusData[normalizedKey].progress || 0;
+                    if (currentProgress < 30) {
+                updateVMStatus(vmName, 'provisioning', 30, 'Network setup...');
+                    } else {
+                        console.log('🟢 [DEBUG] Skipping network detection update - current progress:', currentProgress);
+                    }
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "💾 Cloning template for test01"
+            const vmClonePattern = logMessage.match(/💾 Cloning template for (\w+)/);
+            if (vmClonePattern) {
+                const vmName = vmClonePattern[1];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM cloning detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                    // Only update if current progress is less than 40%
+                    const currentProgress = vmStatusData[normalizedKey].progress || 0;
+                    if (currentProgress < 40) {
+                updateVMStatus(vmName, 'provisioning', 40, 'Cloning...');
+                    } else {
+                        console.log('🟢 [DEBUG] Skipping cloning update - current progress:', currentProgress);
+                    }
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "📈 Clone progress: 25% - VM test01"
+            const vmProgressPattern = logMessage.match(/📈 Clone progress: (\d+)% - VM (\w+)/);
+            if (vmProgressPattern) {
+                const progress = parseInt(vmProgressPattern[1]);
+                const vmName = vmProgressPattern[2];
+                const normalizedKey = vmName.trim().toLowerCase();
+                const baseProgress = 40 + (progress * 0.3); // 40% to 70%
+                console.log('🟢 [DEBUG] VM progress detected:', vmName, progress, 'Base progress:', Math.round(baseProgress));
+                if (normalizedKey in vmStatusData) {
+                updateVMStatus(vmName, 'provisioning', Math.round(baseProgress), `Cloning: ${progress}%`);
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "✅ VM test01 cloned successfully"
+            const vmClonedPattern = logMessage.match(/✅ VM (\w+) cloned successfully/);
+            if (vmClonedPattern) {
+                const vmName = vmClonedPattern[1];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM cloned detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                updateVMStatus(vmName, 'provisioning', 75, 'Clone completed');
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "⚙️ Applying customization for test01"
+            const vmCustomizePattern = logMessage.match(/⚙️ Applying customization for (\w+)/);
+            if (vmCustomizePattern) {
+                const vmName = vmCustomizePattern[1];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM customizing detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                updateVMStatus(vmName, 'provisioning', 80, 'Customizing...');
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "🔧 Configuring network for test01"
+            const vmNetworkConfigPattern = logMessage.match(/🔧 Configuring network for (\w+)/);
+            if (vmNetworkConfigPattern) {
+                const vmName = vmNetworkConfigPattern[1];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM network config detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                updateVMStatus(vmName, 'provisioning', 85, 'Network config...');
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "🟢 VM test01 powered on successfully"
+            const vmPoweredPattern = logMessage.match(/🟢 VM (\w+) powered on successfully/);
+            if (vmPoweredPattern) {
+                const vmName = vmPoweredPattern[1];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM powered on detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                    updateVMStatus(vmName, 'provisioning', 90, 'Powered on');
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+            // Pattern for "✅ Guest OS boot completed - VM test01 ready"
+            const vmReadyPattern = logMessage.match(/✅ Guest OS boot completed - VM (\w+) ready/);
+            if (vmReadyPattern) {
+                const vmName = vmReadyPattern[1];
+                const normalizedKey = vmName.trim().toLowerCase();
+                console.log('🟢 [DEBUG] VM ready detected:', vmName, 'key:', normalizedKey);
+                if (normalizedKey in vmStatusData) {
+                    updateVMStatus(vmName, 'success', 100, 'Ready');
+                } else {
+                    console.error('❌ [DEBUG] VM not found in vmStatusData:', vmName, 'Normalized key:', normalizedKey);
+                }
+                return;
+            }
+            
+
+            
+            // Handle VM data from backend (JSON format)
+            if (logMessage.includes('VM') && logMessage.includes('{')) {
+                console.log('🟢 [DEBUG] VM data detected in log, attempting to parse...');
+                // Try to extract VM data from log (JSON format)
+                const vmDataMatch = logMessage.match(/VM\d+:\s*({.*})/);
+                if (vmDataMatch) {
+                    try {
+                        const jsonStr = vmDataMatch[1];
+                        // เช็คก่อนว่า jsonStr เป็น JSON จริงหรือไม่
+                        if (jsonStr.trim().startsWith('{') || jsonStr.trim().startsWith('[')) {
+                        const vmData = JSON.parse(jsonStr);
+                        console.log('✅ Successfully parsed VM data:', vmData);
+                        if (vmData.name) {
+                            // Use normalized key for consistency
+                            const key = (vmData.name || '').trim().toLowerCase();
+                            console.log(`🆕 Using normalized key: ${key} for VM: ${vmData.name}`);
+                            
+                            // Initialize VM if not exists
+                            if (!vmStatusData[key]) {
+                                console.log(`🆕 Initializing ${key} in vmStatusData`);
+                                vmStatusData[key] = {
+                                    name: vmData.name,
+                                    hostname: vmData.hostname || vmData.name,
+                                    ips: vmData.ips || {},
+                                    status: 'pending',
+                                    progress: 0
+                                };
+                            }
+                            // Update status and progress
+                            const status = vmData.status || 'success';
+                            const progress = status === 'success' ? 100 : 50;
+                            const message = status === 'success' ? 'Ready!' : 'Processing...';
+                            console.log(`🔄 Updating ${key}: status=${status}, progress=${progress}`);
+                            updateVMStatus(key, status, progress, message);
+                            // Update IPs
+                            if (vmData.ips) {
+                                updateVMIPsCell(key);
+                            }
+                        }
+                        } else {
+                            console.warn('⚠️ Skipped JSON.parse: Not a valid JSON string:', jsonStr);
+                    }
+                    } catch (e) {
+                        console.error('Failed to parse VM data:', e);
+                }
+                }
+                return;
+            }
+            
+            // Completion detection
+            if (logMessage.includes('✅ Demo provisioning completed successfully') || 
+                logMessage.includes('🎉 PROVISIONING COMPLETED SUCCESSFULLY')) {
+                console.log('🎉 Completion detected, checking all VMs');
+                
+                // Update all VMs to success if not already
+                Object.keys(vmStatusData).forEach(vmName => {
+                    if (vmStatusData[vmName].status !== 'success') {
+                        updateVMStatus(vmName, 'success', 100, 'Ready!');
+                        console.log(`✅ Forced ${vmName} to success`);
+                    }
+                });
+                
+                // Show completion popup
+                setTimeout(() => {
+                    // Get current VM configs for accurate counting
+                    const currentVMConfigs = getVMConfigs();
+                    const summary = {
+                        total: currentVMConfigs.length,
+                        success: Object.values(vmStatusData).filter(vm => vm.status === 'success').length,
+                        failed: Object.values(vmStatusData).filter(vm => vm.status === 'failed').length,
+                        pending: Object.values(vmStatusData).filter(vm => vm.status === 'pending').length
+                    };
+                    console.log('Calling showCompletionMenu with summary:', summary);
+                    console.log('Current VM configs count:', currentVMConfigs.length);
+                    console.log('vmStatusData keys:', Object.keys(vmStatusData));
+                    showCompletionMenu(summary);
+                    displayFlashMessage("Provisioning completed successfully!", "success");
+                }, 1000);
+                
+                // Close EventSource after completion
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+                
+                // Re-enable button
+                isProvisioning = false;
+                button.disabled = false;
+                btnText.textContent = '🚀 Start Provisioning';
+                spinner.style.display = 'none';
+                
+                // Clear timeout
+                if (provisionTimeout) {
+                    clearTimeout(provisionTimeout);
+                    provisionTimeout = null;
+                }
+            }
+            
+            // Debug: Log unmatched messages for troubleshooting
+            if (logMessage.includes('VM') || logMessage.includes('🚀') || logMessage.includes('📋') || 
+                logMessage.includes('🌐') || logMessage.includes('💾') || logMessage.includes('⚙️') || 
+                logMessage.includes('🔧') || logMessage.includes('🟢') || logMessage.includes('✅')) {
+                console.log('Unmatched log message (might need new pattern):', logMessage);
+            }
+        }
+        
+        // ===== VALIDATION FUNCTIONS =====
+        function validateConfiguration() {
+            console.log('Validating configuration...');
+            
+            // Basic form validation
+            const template = document.getElementById('template').value;
+            const datacenter = document.getElementById('datacenter').value;
+            const cluster = document.getElementById('cluster').value;
+            
+            if (!template || !datacenter || !cluster) {
+                displayFlashMessage('Please fill in all required infrastructure fields (Template, Datacenter, Cluster).', 'error', true);
+                return false;
+            }
+            
+            const isIndividualConfig = document.getElementById('individualConfig').checked;
+            let vmConfigs = [];
+            
+            if (isIndividualConfig) {
+                // Individual configuration validation
+                const nodeElements = document.querySelectorAll('.node-config');
+                for (let idx = 0; idx < nodeElements.length; idx++) {
+                    const nodeElement = nodeElements[idx];
+                    const i = parseInt(nodeElement.id.split('_')[1]);
+                    const nameInput = nodeElement.querySelector(`input[name="node_${i}_name"]`);
+                    const hostnameInput = nodeElement.querySelector(`input[name="node_${i}_hostname"]`);
+                    if (!nameInput || !nameInput.value.trim()) {
+                        displayFlashMessage(`Node ${i}: VM Name is required.`, 'error', true);
+                        if (nameInput) nameInput.focus();
+                        return false;
+                    }
+                    
+                    // Validate VM name format
+                    const vmName = nameInput.value.trim();
+                    if (!/^[a-zA-Z0-9\-_]+$/.test(vmName)) {
+                        displayFlashMessage(`Node ${i}: VM Name "${vmName}" contains invalid characters. Use only letters, numbers, hyphens, and underscores.`, 'error', true);
+                        nameInput.focus();
+                        return false;
+                    }
+                    
+                    // Length validation
+                    if (vmName.length < 3 || vmName.length > 50) {
+                        displayFlashMessage(`Node ${i}: VM Name "${vmName}" must be between 3 and 50 characters.`, 'error', true);
+                        nameInput.focus();
+                        return false;
+                    }
+                    
+                    const hostname = hostnameInput ? hostnameInput.value.trim() : '';
+                    
+                    // Validate hostname format if provided
+                    if (hostname && !/^[a-zA-Z0-9\-\.]+$/.test(hostname)) {
+                        displayFlashMessage(`Node ${i}: Hostname "${hostname}" contains invalid characters. Use only letters, numbers, hyphens, and dots.`, 'error');
+                        if (hostnameInput) hostnameInput.focus();
+                        return false;
+                    }
+                    
+                    // Get IP addresses for this node
+                    const ips = {};
+                    const ipInputs = nodeElement.querySelectorAll('input[name^="node_' + i + '_ip"]');
+                    ipInputs.forEach((ipInput, idx) => {
+                        const ipValue = ipInput.value.trim();
+                        if (ipValue) {
+                            ips[`net${idx + 1}`] = ipValue;
+                        }
+                    });
+                    
+                    // Convert IPs object to string for display (like backend does)
+                    let ipsString = '-';
+                    const ipValues = Object.values(ips).filter(ip => ip);
+                    if (ipValues.length > 0) {
+                        ipsString = ipValues.join(', ');
+                    }
+                    
+                    vmConfigs.push({
+                        name: vmName,
+                        hostname: hostname,
+                        ips: ipsString
+                    });
+                }
+            } else {
+                // Bulk configuration validation
+                const prefix = document.getElementById('prefix').value.trim();
+                const count = parseInt(document.getElementById('count').value);
+                
+                if (!prefix) {
+                    displayFlashMessage('VM Name Prefix is required for bulk configuration.', 'error');
+                    document.getElementById('prefix').focus();
+                    return false;
+                }
+                
+                // Validate prefix format
+                if (!/^[a-zA-Z0-9\-_]+$/.test(prefix)) {
+                    displayFlashMessage(`VM Name Prefix "${prefix}" contains invalid characters. Use only letters, numbers, hyphens, and underscores.`, 'error');
+                    document.getElementById('prefix').focus();
+                    return false;
+                }
+                
+                // Length validation for prefix
+                if (prefix.length < 2 || prefix.length > 40) {
+                    displayFlashMessage(`VM Name Prefix "${prefix}" must be between 2 and 40 characters (to allow for numbering).`, 'error');
+                    document.getElementById('prefix').focus();
+                    return false;
+                }
+                
+                if (isNaN(count) || count < 1 || count > 50) {
+                    displayFlashMessage('Number of VMs must be between 1 and 50.', 'error');
+                    document.getElementById('count').focus();
+                    return false;
+                }
+                
+                // Get starting IPs for bulk mode
+                const startingIPs = [];
+                const ipInputs = document.querySelectorAll('#nic-fields input[type="text"]');
+                console.log('🟢 [DEBUG] Found IP inputs:', ipInputs.length);
+                ipInputs.forEach((ipInput, idx) => {
+                    const ipValue = ipInput.value.trim();
+                    startingIPs[idx] = ipValue;
+                    console.log(`🟢 [DEBUG] IP ${idx + 1}:`, ipValue);
+                });
+                console.log('🟢 [DEBUG] Starting IPs array:', startingIPs);
+                
+                // Get hostname prefix
+                const hostnamePrefix = document.getElementById('hostname').value.trim();
+                
+                // Generate VM names for validation
+                for (let i = 1; i <= count; i++) {
+                    const vmName = `${prefix}${i.toString().padStart(2, '0')}`;
+                    
+                    // Generate hostname
+                    let hostname = '';
+                    if (hostnamePrefix) {
+                        hostname = `${hostnamePrefix}${i.toString().padStart(2, '0')}`;
+                    } else {
+                        hostname = `${vmName.toLowerCase()}.local`;
+                    }
+                    
+                    // Generate IPs for this VM
+                    const ips = {};
+                    startingIPs.forEach((startIP, idx) => {
+                        if (startIP) {
+                            ips[`net${idx + 1}`] = incrementIP(startIP, i - 1);
+                        }
+                    });
+                    
+                    // Convert IPs object to string for display (like backend does)
+                    let ipsString = '-';
+                    const ipValues = Object.values(ips).filter(ip => ip);
+                    if (ipValues.length > 0) {
+                        ipsString = ipValues.join(', ');
+                    }
+                    
+                    // Debug: Log IP generation
+                    console.log(`Generated IPs for ${vmName}:`, {
+                        startingIPs: startingIPs,
+                        generatedIps: ips,
+                        ipsString: ipsString,
+                        hasIps: Object.keys(ips).length > 0
+                    });
+                    
+                    vmConfigs.push({
+                        name: vmName,
+                        hostname: hostname,
+                        ips: ipsString
+                    });
+                }
+            }
+            
+            // Check for duplicate VM names
+            const vmNames = vmConfigs.map(vm => vm.name.toLowerCase());
+            const duplicateVMNames = vmNames.filter((name, index) => vmNames.indexOf(name) !== index);
+            
+            if (duplicateVMNames.length > 0) {
+                const uniqueDuplicates = [...new Set(duplicateVMNames)];
+                displayFlashMessage(`❌ Duplicate VM Names detected: ${uniqueDuplicates.join(', ')}. Each VM must have a unique name.`, 'error', true);
+                return false;
+            }
+            
+            // Check for duplicate hostnames (excluding empty ones)
+            const hostnames = vmConfigs.filter(vm => vm.hostname && vm.hostname.trim())
+                                     .map(vm => vm.hostname.toLowerCase().trim());
+            const duplicateHostnames = hostnames.filter((hostname, index) => hostnames.indexOf(hostname) !== index);
+            
+            if (duplicateHostnames.length > 0) {
+                const uniqueDuplicateHostnames = [...new Set(duplicateHostnames)];
+                displayFlashMessage(`❌ Duplicate Hostnames detected: ${uniqueDuplicateHostnames.join(', ')}. Each VM must have a unique hostname.`, 'error', true);
+                return false;
+            }
+            
+            // Validate IP addresses if provided
+            const ipInputs = document.querySelectorAll('#nic-fields input[type="text"]');
+            for (let input of ipInputs) {
+                if (input.value.trim()) {
+                    if (!isValidIPAddress(input.value.trim())) {
+                        displayFlashMessage(`Invalid IP address format: "${input.value}". Please enter a valid IPv4 address.`, 'error');
+                        input.focus();
+                        return false;
+                    }
+                }
+            }
+            
+            // Individual node IP validation
+            if (isIndividualConfig) {
+                for (let i = 1; i <= nodeCount; i++) {
+                    const ipInputs = document.querySelectorAll(`#node_${i}_ips input`);
+                    for (let input of ipInputs) {
+                        if (input.value.trim()) {
+                            if (!isValidIPAddress(input.value.trim())) {
+                                displayFlashMessage(`Node ${i}: Invalid IP address format: "${input.value}". Please enter a valid IPv4 address.`, 'error');
+                                input.focus();
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            console.log('Configuration validation passed:', vmConfigs);
+            
+            // Debug: Log each VM config with IPs
+            vmConfigs.forEach((vmConfig, index) => {
+                console.log(`VM Config ${index + 1}:`, {
+                    name: vmConfig.name,
+                    hostname: vmConfig.hostname,
+                    ips: vmConfig.ips,
+                    ipsType: typeof vmConfig.ips,
+                    ipsKeys: vmConfig.ips ? Object.keys(vmConfig.ips) : [],
+                    ipsValues: vmConfig.ips ? Object.values(vmConfig.ips) : []
+                });
+            });
+            
+            return vmConfigs;
+        }
+        
+        function isValidIPAddress(ip) {
+            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            return ipRegex.test(ip);
+        }
+        
+        // ===== COMPLETION MENU FUNCTIONS =====
+        function showCompletionMenu(summary) {
+            console.log('=== showCompletionMenu START ===');
+            console.log('Showing completion menu with summary:', summary);
+            
+            // Update statistics
+            const totalElement = document.getElementById('totalVMs');
+            const successElement = document.getElementById('successVMs');
+            const failedElement = document.getElementById('failedVMs');
+            
+            if (totalElement) totalElement.textContent = summary.total || 0;
+            if (successElement) successElement.textContent = summary.success || 0;
+            if (failedElement) failedElement.textContent = summary.failed || 0;
+            
+            console.log('Updated statistics:', {
+                total: totalElement ? totalElement.textContent : 'N/A',
+                success: successElement ? successElement.textContent : 'N/A',
+                failed: failedElement ? failedElement.textContent : 'N/A'
+            });
+            
+            // Show overlay with animation
+            const overlay = document.getElementById('completionOverlay');
+            if (overlay) {
+                console.log('Found completionOverlay, adding show class');
+                overlay.classList.add('show');
+                console.log('Overlay classes after adding show:', overlay.className);
+            } else {
+                console.error('completionOverlay element not found!');
+            }
+            
+            // Add success sound effect (optional)
+            try {
+                // You could add an audio element for completion sound
+                // const audio = new Audio('/static/sounds/success.mp3');
+                // audio.play();
+            } catch (e) {
+                console.log('Audio not available');
+            }
+            
+            console.log('=== showCompletionMenu END ===');
+        }
+        
+        function closeCompletionMenu() {
+            const overlay = document.getElementById('completionOverlay');
+            overlay.classList.remove('show');
+        }
+        
+        function startNewProvisioning() {
+            window.location.href = "/provision";
+        }
+        
+        function resetFormToInitialState() {
+            console.log('Resetting form to initial state...');
+            
+            // Reset the form
+            const form = document.getElementById('provisionForm');
+            form.reset();
+            
+            // Set default values
+            document.getElementById('prefix').value = 'test';
+            document.getElementById('count').value = '5';
+            
+            // Reset individual config toggle
+            const individualToggle = document.getElementById('individualConfig');
+            individualToggle.checked = false;
+            
+            // Show/hide appropriate sections
+            document.getElementById('bulkConfig').style.display = 'block';
+            document.getElementById('individualNodes').style.display = 'none';
+            document.getElementById('addNode').style.display = 'none';
+            
+            // Reset network display
+            const networkDisplay = document.getElementById('networkDisplay');
+            networkDisplay.className = 'network-display';
+            networkDisplay.innerHTML = `
+                <div class="network-zone-indicator waiting">
+                    <span class="zone-icon">🔍</span>
+                    <span>Select a template to auto-detect network zones...</span>
+                </div>
+            `;
+            networkDisplay.classList.remove('detected');
+            
+            // Clear hidden network fields
+            document.getElementById('network').value = '';
+            document.getElementById('networkZones').value = '';
+            
+            // Clear all validation errors
+            document.querySelectorAll('.form-group input.error, .form-group select.error').forEach(el => {
+                el.classList.remove('error');
+            });
+            document.querySelectorAll('.validation-error').forEach(el => {
+                el.remove();
+            });
+        }
+        
+        function clearCurrentProvisioning() {
+            console.log('Clearing current provisioning session...');
+            
+            // Clear status table completely
+            const statusContainer = document.getElementById('statusTableContainer');
+            const statusTableBody = document.getElementById('statusTableBody');
+            if (statusContainer) statusContainer.style.display = 'none';
+            if (statusTableBody) statusTableBody.innerHTML = '';
+            
+            // Reset logs to initial state
+            const logsContainer = document.getElementById('logs');
+            if (logsContainer) {
+                logsContainer.innerHTML = `Ready for VM provisioning!
+Configure your VMs and click "Preview Configuration" to see the summary.
+
+🎯 NEW: Smart Network Detection
+- Select template → Network zone auto-detected
+- No more manual network selection needed!
+
+Example configuration:
+- Template: CentOS-8-Template → Auto-detects Web-VLAN-100
+- Prefix: test, Count: 5
+- Starting IPs: 10.10.10.10, 10.20.10.10
+- Result: test01 (10.10.10.10, 10.20.10.10), test02 (10.10.10.11, 10.20.10.11), etc.`;
+            }
+            
+            // Hide configuration summary
+            const configSummary = document.getElementById('configSummary');
+            if (configSummary) configSummary.style.display = 'none';
+            
+            // Reset provisioning state
+            isProvisioning = false;
+            
+            // Reset button state
+            const provisionBtn = document.getElementById('provisionBtn');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            if (provisionBtn) provisionBtn.disabled = false;
+            if (btnText) btnText.textContent = '🚀 Start Provisioning';
+            if (spinner) spinner.style.display = 'none';
+            
+            // Reset global variables
+            vmStatusData = {};
+            nodeCount = 1;
+            
+            // Clear any running timeouts
+            if (provisionTimeout) {
+                clearTimeout(provisionTimeout);
+                provisionTimeout = null;
+            }
+            
+            // Close EventSource connection
+            if (eventSource) {
+                console.log('Closing EventSource connection');
+                eventSource.close();
+                eventSource = null;
+            }
+            
+            // Clear any flash messages
+            const flashContainer = document.querySelector('.flash-messages');
+            if (flashContainer) {
+                flashContainer.innerHTML = '';
+            }
+            
+            // Reset individual nodes to single node
+            const individualNodes = document.getElementById('individualNodes');
+            if (individualNodes) {
+                individualNodes.innerHTML = `
+                    <div class="node-config" id="node_1">
+                        <div class="node-header">
+                            <div class="node-title">
+                                <span class="node-number">1</span>
+                                Node 1 Configuration
+                            </div>
+                        </div>
+                        <div class="node-fields">
+                            <div class="form-group">
+                                <label for="node_1_name">VM Name <span class="required">*</span></label>
+                                <input type="text" name="node_1_name" id="node_1_name" placeholder="e.g., WebServer01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="node_1_hostname">Hostname</label>
+                                <input type="text" name="node_1_hostname" id="node_1_hostname" placeholder="e.g., webserver01.domain.com">
+                            </div>
+                        </div>
+                        <div class="ip-config">
+                            <h5>🌐 Network Configuration</h5>
+                            <div id="node_1_ips">
+                                <!-- IP fields will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function viewVMDetails() {
+            closeCompletionMenu();
+            
+            // Scroll to status table
+            const statusContainer = document.getElementById('statusTableContainer');
+            if (statusContainer.style.display !== 'none') {
+                statusContainer.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                
+                displayFlashMessage('VM details displayed in the status table above.', 'info');
+            } else {
+                displayFlashMessage('No VM details available.', 'error');
+            }
+        }
+        
+        // Navigation functions
+        function showNavMenu() {
+            document.getElementById('navMenu').classList.add('show');
+        }
+        
+        function hideNavMenu() {
+            document.getElementById('navMenu').classList.remove('show');
+        }
+        
+        function viewLogs() {
+            const logsContainer = document.getElementById('logs');
+            logsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            hideNavMenu();
+        }
+        
+        function exportResults() {
+            // Get current VM configs for accurate counting
+            const currentVMConfigs = getVMConfigs();
+            const results = {
+                timestamp: new Date().toISOString(),
+                vmData: vmStatusData,
+                summary: {
+                    total: currentVMConfigs.length,
+                    success: Object.values(vmStatusData).filter(vm => vm.status === 'success').length,
+                    failed: Object.values(vmStatusData).filter(vm => vm.status === 'failed').length,
+                    pending: Object.values(vmStatusData).filter(vm => vm.status === 'pending').length
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vm-provisioning-results-${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            displayFlashMessage('Results exported successfully!', 'success');
+            hideNavMenu();
+        }
+        
+        function getVMConfigs() {
+            console.log('Getting VM configs...');
+            
+            // Always read from current form inputs for accurate counting
+            // Don't use summary table as it may contain old data
+            console.log('Reading from current form inputs');
+            const isIndividualConfig = document.getElementById('individualConfig').checked;
+            console.log('Individual config mode:', isIndividualConfig);
+            const vmConfigs = [];
+            
+            if (isIndividualConfig) {
+                console.log('Processing individual config mode, nodeCount:', nodeCount);
+                // Individual config mode
+                for (let i = 1; i <= nodeCount; i++) {
+                    const nodeElement = document.getElementById(`node_${i}`);
+                    if (nodeElement) {
+                        const vmName = document.querySelector(`input[name="node_${i}_name"]`)?.value || '';
+                        const hostname = document.querySelector(`input[name="node_${i}_hostname"]`)?.value || '';
+                        
+                        console.log(`Node ${i}: name=${vmName}, hostname=${hostname}`);
+                        
+                        if (vmName) {
+                            const ips = {};
+                            for (let j = 1; j <= nicCount; j++) {
+                                const ipInput = document.querySelector(`input[name="node_${i}_ip${j}"]`);
+                                if (ipInput && ipInput.value) {
+                                    ips[`nic${j}`] = ipInput.value;
+                                }
+                            }
+                            
+                            vmConfigs.push({
+                                name: vmName,
+                                hostname: hostname || `${vmName.toLowerCase()}.local`,
+                                ips: ips
+                            });
+                        }
+                    }
+                }
+            } else {
+                console.log('Processing bulk config mode');
+                // Bulk config mode
+                const prefix = document.getElementById('prefix').value || 'vm';
+                const count = parseInt(document.getElementById('count').value) || 1;
+                const hostname = document.getElementById('hostname').value || '';
+                
+                console.log('Bulk config:', { prefix, count, hostname });
+                
+                for (let i = 1; i <= count; i++) {
+                    const vmName = `${prefix}${i.toString().padStart(2, '0')}`;
+                    vmConfigs.push({
+                        name: vmName,
+                        hostname: hostname || `${vmName.toLowerCase()}.local`,
+                        ips: {} // Will be DHCP or from bulk settings
+                    });
+                }
+            }
+            
+            console.log('Final VM configs:', vmConfigs);
+            return vmConfigs;
+        }
+
+
+        // Load initial data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sync demo_mode from backend to sessionStorage ทุกครั้งที่โหลดหน้า
+            fetch('/get_demo_mode')
+              .then(res => res.json())
+              .then(data => {
+                sessionStorage.setItem('demo_mode', data.demo_mode ? 'true' : 'false');
+              });
+            console.log('Page loaded, initializing...');
+            setupEventListeners();
+            updateNodeIPFields(); // Initialize IP fields for the first node if individual config is active
+            
+            // Initial state: set required attributes based on default (bulk)
+            updateRequiredAttributes();
+            
+            // Add keyboard shortcuts for completion menu
+            document.addEventListener('keydown', function(e) {
+                const completionMenu = document.getElementById('completionOverlay');
+                if (completionMenu.classList.contains('show')) {
+                    if (e.key === 'Escape') {
+                        closeCompletionMenu();
+                    } else if (e.key === 'n' || e.key === 'N') {
+                        startNewProvisioning();
+                    } else if (e.key === 'd' || e.key === 'D') {
+                        window.location.href = '/dashboard';
+                    } else if (e.key === 'v' || e.key === 'V') {
+                        viewVMDetails();
+                    }
+                }
+            });
+            
+            // Close completion menu when clicking outside
+            document.getElementById('completionOverlay').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeCompletionMenu();
+                }
+            });
+        });
+
+        function setupEventListeners() {
+            // Template selection to auto-detect network zone
+            document.getElementById('template').addEventListener('change', function() {
+                // Reset network display UI ทุกครั้ง
+                const networkDisplay = document.getElementById('networkDisplay');
+                if (networkDisplay) {
+                    networkDisplay.innerHTML = `
+                        <div class="network-zone-indicator waiting">
+                            <span class="zone-icon">🔍</span>
+                            <span>Select a template to auto-detect network zones...</span>
+                        </div>
+                    `;
+                    networkDisplay.classList.remove('detected');
+                }
+                // Dynamic NIC count by template
+                if (this.value === 'CentOS-8-Template') {
+                    nicCount = 3;
+                } else {
+                    nicCount = 2;
+                }
+                detectNetworkZone(this.value);
+                updateNodeIPFields(); // อัปเดต field IP ของแต่ละ node ให้ตรง nicCount ใหม่
+                // อัปเดต field IP bulk mode
+                const nicFields = document.getElementById('nic-fields');
+                if (nicFields) {
+                    nicFields.innerHTML = '';
+                    for (let j = 1; j <= nicCount; j++) {
+                        const nicField = document.createElement('div');
+                        nicField.className = 'nic-field';
+                        nicField.innerHTML = `
+                            <span class="nic-label">NIC ${j}</span>
+                            <input type="text" name="ip${j}" placeholder="10.${j === 1 ? '10' : '20'}.10.10 (starting IP)" pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+                        `;
+                        nicFields.appendChild(nicField);
+                    }
+                }
+            });
+
+            // Individual configuration toggle
+            document.getElementById('individualConfig').addEventListener('change', function() {
+                const bulkConfig = document.getElementById('bulkConfig');
+                const individualNodes = document.getElementById('individualNodes');
+                const addNodeBtn = document.getElementById('addNode');
+                const networkSection = document.getElementById('networkSection');
+                
+                if (this.checked) {
+                    // Individual mode: hide bulk config and network section
+                    bulkConfig.style.display = 'none';
+                    individualNodes.style.display = 'block';
+                    addNodeBtn.style.display = 'block';
+                    networkSection.style.display = 'none';
+                    
+                    // Initialize individual nodes with proper IP fields
+                    initializeIndividualNodes();
+                } else {
+                    // Bulk mode: show bulk config and network section
+                    bulkConfig.style.display = 'block';
+                    individualNodes.style.display = 'none';
+                    addNodeBtn.style.display = 'none';
+                    networkSection.style.display = 'block';
+                    setTimeout(() => updateRequiredAttributes(), 100); // Update required attributes based on new mode
+                }
+            });
+
+            // Function to initialize individual nodes with proper IP fields
+            function initializeIndividualNodes() {
+                const individualNodes = document.getElementById('individualNodes');
+                
+                // Clear existing nodes
+                individualNodes.innerHTML = '';
+                
+                // Create first node
+                createIndividualNode(1);
+                
+                // Reset node count
+                window.nodeCount = 1;
+                
+                console.log('🟢 [DEBUG] Individual nodes initialized');
+                console.log('🟢 [DEBUG] individualNodes display:', individualNodes.style.display);
+                console.log('🟢 [DEBUG] addNode display:', document.getElementById('addNode').style.display);
+                
+                // Update required attributes after initializing
+                setTimeout(() => updateRequiredAttributes(), 100);
+            }
+
+            // Function to create individual node with IP fields
+            function createIndividualNode(nodeNumber) {
+                const individualNodes = document.getElementById('individualNodes');
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = 'node-config';
+                nodeDiv.id = `node_${nodeNumber}`;
+                
+                // Get detected network zones
+                const networkZonesData = JSON.parse(document.getElementById('networkZones').value || '{}');
+                const nicCount = Object.keys(networkZonesData).length || 2; // Default to 2 NICs
+                
+                console.log('🟢 [DEBUG] Creating individual node:', nodeNumber);
+                console.log('🟢 [DEBUG] networkZonesData:', networkZonesData);
+                console.log('🟢 [DEBUG] nicCount:', nicCount);
+                
+                const ipFieldsHTML = generateIPFields(nodeNumber, nicCount, networkZonesData);
+                
+                nodeDiv.innerHTML = `
+                    <div class="node-header">
+                        <div class="node-title">
+                            <span class="node-number">${nodeNumber}</span>
+                            Node ${nodeNumber} Configuration
+                        </div>
+                        ${nodeNumber > 1 ? `<button type="button" class="remove-node" onclick="removeNode(${nodeNumber})">🗑️ Remove</button>` : ''}
+                    </div>
+                    <div class="node-fields">
+                        <div class="form-group">
+                            <label for="node_${nodeNumber}_name">VM Name <span class="required">*</span></label>
+                            <input type="text" name="node_${nodeNumber}_name" id="node_${nodeNumber}_name" placeholder="e.g., WebServer${nodeNumber.toString().padStart(2, '0')}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="node_${nodeNumber}_hostname">Hostname</label>
+                            <input type="text" name="node_${nodeNumber}_hostname" id="node_${nodeNumber}_hostname" placeholder="e.g., webserver${nodeNumber.toString().padStart(2, '0')}.domain.com">
+                        </div>
+                    </div>
+                    <div class="ip-config">
+                        <h5>🌐 Network Configuration</h5>
+                        <div id="node_${nodeNumber}_ips">
+                            ${ipFieldsHTML}
+                        </div>
+                    </div>
+                `;
+                
+                individualNodes.appendChild(nodeDiv);
+                
+                console.log('🟢 [DEBUG] Node created and appended:', nodeDiv);
+                console.log('🟢 [DEBUG] individualNodes children count:', individualNodes.children.length);
+            }
+
+            // Function to generate IP fields for individual node
+            function generateIPFields(nodeNumber, nicCount, networkZonesData) {
+                let ipFieldsHTML = '';
+                
+                console.log('🟢 [DEBUG] Generating IP fields for node:', nodeNumber);
+                console.log('🟢 [DEBUG] nicCount:', nicCount);
+                console.log('🟢 [DEBUG] networkZonesData:', networkZonesData);
+                
+                for (let i = 1; i <= nicCount; i++) {
+                    const nicName = `nic${i}`;
+                    const networkZone = networkZonesData[nicName] || `VLAN-${i}00`;
+                    
+                    ipFieldsHTML += `
+                        <div class="form-group">
+                            <label for="node_${nodeNumber}_ip${i}">NIC ${i} (${networkZone})</label>
+                            <input type="text" name="node_${nodeNumber}_ip${i}" id="node_${nodeNumber}_ip${i}" 
+                                   placeholder="e.g., 192.168.${i}.${100 + nodeNumber}" 
+                                   pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+                        </div>
+                    `;
+                }
+                
+                console.log('🟢 [DEBUG] Generated IP fields HTML:', ipFieldsHTML);
+                return ipFieldsHTML;
+            }
+
+            // Function to add new node
+            function addNewNode() {
+                window.nodeCount = (window.nodeCount || 1) + 1;
+                console.log('🟢 [DEBUG] Adding new node:', window.nodeCount);
+                createIndividualNode(window.nodeCount);
+                setTimeout(() => updateRequiredAttributes(), 100); // Update required attributes after adding node
+            }
+
+            // Function to remove node
+            function removeNode(nodeNumber) {
+                console.log('🟢 [DEBUG] Removing node:', nodeNumber);
+                const nodeElement = document.getElementById(`node_${nodeNumber}`);
+                if (nodeElement) {
+                    nodeElement.remove();
+                    
+                    // Renumber remaining nodes
+                    const remainingNodes = document.querySelectorAll('.node-config');
+                    remainingNodes.forEach((node, index) => {
+                        const newNumber = index + 1;
+                        const nodeNumberSpan = node.querySelector('.node-number');
+                        const nodeTitle = node.querySelector('.node-title');
+                        const removeBtn = node.querySelector('.remove-node');
+                        
+                        if (nodeNumberSpan) nodeNumberSpan.textContent = newNumber;
+                        if (nodeTitle) nodeTitle.textContent = `Node ${newNumber} Configuration`;
+                        if (removeBtn) {
+                            removeBtn.onclick = () => removeNode(newNumber);
+                            removeBtn.textContent = newNumber > 1 ? '🗑️ Remove' : '';
+                        }
+                        
+                        // Update IDs and names
+                        node.id = `node_${newNumber}`;
+                        node.querySelectorAll('input').forEach(input => {
+                            const oldName = input.name;
+                            const oldId = input.id;
+                            
+                            if (oldName.includes('node_')) {
+                                const fieldName = oldName.split('_').slice(2).join('_');
+                                input.name = `node_${newNumber}_${fieldName}`;
+                                input.id = `node_${newNumber}_${fieldName}`;
+                            }
+                        });
+                    });
+                    
+                    window.nodeCount = remainingNodes.length;
+                    console.log('🟢 [DEBUG] Node removed, remaining nodes:', window.nodeCount);
+                    setTimeout(() => updateRequiredAttributes(), 100); // Update required attributes after removing node
+                }
+            }
+
+            // Add node button
+            document.getElementById('addNode').addEventListener('click', addNewNode);
+            
+            // Make removeNode function globally available
+            window.removeNode = removeNode;
+
+            // Function to update IP fields for individual nodes
+            function updateNodeIPFields() {
+                console.log('🟢 [DEBUG] updateNodeIPFields called, nicCount:', nicCount);
+                const individualNodes = document.getElementById('individualNodes');
+                if (!individualNodes) {
+                    console.log('🟢 [DEBUG] individualNodes not found');
+                    return;
+                }
+
+                // Update IP fields for each existing node
+                const nodes = individualNodes.querySelectorAll('.node-config');
+                nodes.forEach((node, index) => {
+                    const nodeNumber = index + 1;
+                    const ipConfig = node.querySelector('.ip-config');
+                    if (ipConfig) {
+                        // Clear existing IP fields
+                        ipConfig.innerHTML = '';
+                        
+                        // Create new IP fields based on current nicCount
+                        for (let j = 1; j <= nicCount; j++) {
+                            const ipRow = document.createElement('div');
+                            ipRow.className = 'ip-row';
+                            ipRow.innerHTML = `
+                                <span class="ip-label">NIC ${j} IP:</span>
+                                <input type="text" name="node_${nodeNumber}_ip${j}" 
+                                       placeholder="10.${j === 1 ? '10' : '20'}.10.10" 
+                                       pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+                            `;
+                            ipConfig.appendChild(ipRow);
+                        }
+                    }
+                });
+                console.log('🟢 [DEBUG] updateNodeIPFields completed');
+            }
+
+            // Make updateNodeIPFields function globally available
+            window.updateNodeIPFields = updateNodeIPFields;
+
+            // Form submission (this will trigger the POST request to Flask)
+            document.getElementById('provisionForm').addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission initially
+
+                if (isProvisioning) {
+                    return;
+                }
+
+                // If summary is not visible, generate and show it first
+                const summaryVisible = document.getElementById('configSummary').style.display !== 'none';
+                if (!summaryVisible) {
+                    if (generateConfigSummary()) {
+                        showConfigSummary();
+                    }
+                    return; // Stop here, wait for the user to click "Confirm & Start Provisioning"
+                }
+
+                // If summary is visible, proceed with actual provisioning
+                startActualProvisioning();
+            });
+
+            // The "Start Provisioning" button will now trigger startActualProvisioning() directly
+            // when the summary is visible. No need for a separate click listener here.
+        }
+
+        // Function to update required attributes based on selected mode
+        function updateRequiredAttributes() {
+            const isIndividualConfig = document.getElementById('individualConfig').checked;
+
+            // Bulk fields
+            if (!isIndividualConfig) {
+                document.getElementById('prefix').required = true;
+                document.getElementById('count').required = true;
+            document.querySelectorAll('#nic-fields input[name^="ip"]').forEach(input => {
+                input.required = false; // IPs are optional in bulk mode
+            });
+            } else {
+                document.getElementById('prefix').required = false;
+                document.getElementById('count').required = false;
+                document.querySelectorAll('#nic-fields input[name^="ip"]').forEach(input => {
+                    input.required = false; // IPs are optional in bulk mode
+                });
+            }
+
+            // Individual fields
+            if (isIndividualConfig) {
+                for (let i = 1; i <= (window.nodeCount || 1); i++) {
+                const vmNameInput = document.querySelector(`input[name="node_${i}_name"]`);
+                    const hostnameInput = document.querySelector(`input[name="node_${i}_hostname"]`);
+                    
+                    if (vmNameInput) vmNameInput.required = true;
+                    if (hostnameInput) hostnameInput.required = true;
+                    
+                    // IP fields are optional
+                    for (let j = 1; j <= nicCount; j++) {
+                        const ipInput = document.querySelector(`input[name="node_${i}_ip${j}"]`);
+                        if (ipInput) ipInput.required = false;
+                    }
+                }
+            } else {
+                // Bulk mode: disable required for individual node fields
+                for (let i = 1; i <= (window.nodeCount || 1); i++) {
+                    const vmNameInput = document.querySelector(`input[name="node_${i}_name"]`);
+                    const hostnameInput = document.querySelector(`input[name="node_${i}_hostname"]`);
+                    
+                    if (vmNameInput) vmNameInput.required = false;
+                    if (hostnameInput) hostnameInput.required = false;
+                    
+                    // IP fields are also not required in bulk mode
+                    for (let j = 1; j <= nicCount; j++) {
+                        const ipInput = document.querySelector(`input[name="node_${i}_ip${j}"]`);
+                        if (ipInput) ipInput.required = false;
+                    }
+                }
+            }
+        }
+
+        function detectNetworkZone(templateValue) {
+            const networkDisplay = document.getElementById('networkDisplay');
+            let zoneIndicator = networkDisplay.querySelector('.network-zone-indicator');
+            let detectedNetwork = networkDisplay.querySelector('#detectedNetwork');
+            // ถ้าไม่มี zoneIndicator ให้สร้างใหม่
+            if (!zoneIndicator) {
+                zoneIndicator = document.createElement('div');
+                zoneIndicator.className = 'network-zone-indicator waiting';
+                detectedNetwork = document.createElement('span');
+                detectedNetwork.id = 'detectedNetwork';
+                detectedNetwork.textContent = 'Select a template to detect network zones';
+                zoneIndicator.appendChild(detectedNetwork);
+                networkDisplay.innerHTML = '';
+                networkDisplay.appendChild(zoneIndicator);
+            }
+            const networkInput = document.getElementById('network');
+            const networkZonesInput = document.getElementById('networkZones');
+            
+            if (!templateValue) {
+                // Reset to default state
+                detectedNetwork.textContent = 'Select a template to detect network zones';
+                networkInput.value = '';
+                networkZonesInput.value = '';
+                networkDisplay.classList.remove('detected');
+                zoneIndicator.classList.remove('detected');
+                zoneIndicator.classList.add('waiting');
+                return;
+            }
+
+            // Network mapping for multiple NICs based on template
+            // This should ideally come from backend API or a more robust configuration
+            const networkMapping = {
+                'CentOS-8-Template': {
+                    nic1: 'Web-VLAN-100',
+                    nic2: 'Management-VLAN-200',
+                    nic3: 'Backup-VLAN-400'
+                },
+                'Ubuntu-20.04-Template': {
+                    nic1: 'Web-VLAN-100',
+                    nic2: 'Management-VLAN-200'
+                },
+                'Windows-Server-2019': {
+                    nic1: 'Management-VLAN-200',
+                    nic2: 'Database-VLAN-300'
+                }
+            };
+
+            const detectedZones = networkMapping[templateValue];
+            if (detectedZones) {
+                // Render network zones mapping ตามจริง
+                const networkZonesList = document.createElement('div');
+                networkZonesList.className = 'network-zones-list';
+                Object.entries(detectedZones).forEach(([nic, zone], idx) => {
+                        const zoneItem = document.createElement('div');
+                        zoneItem.className = 'network-zone-item';
+                        zoneItem.innerHTML = `
+                        <span class="nic-badge">${nic.toUpperCase()}</span>
+                        <span class="zone-name">${zone}</span>
+                        `;
+                        networkZonesList.appendChild(zoneItem);
+                });
+                zoneIndicator.innerHTML = `
+                    <span class="zone-icon">🌐</span>
+                    <span>Auto-detected Network Zones:</span>
+                `;
+                zoneIndicator.appendChild(networkZonesList);
+                networkDisplay.classList.add('detected');
+                zoneIndicator.classList.add('detected');
+                networkInput.value = detectedZones.nic1;
+                networkZonesInput.value = JSON.stringify(detectedZones);
+            } else {
+                // fallback
+                zoneIndicator.innerHTML = `
+                    <span class="zone-icon">🔍</span>
+                    <span>Select a template to auto-detect network zones...</span>
+                `;
+                networkDisplay.classList.remove('detected');
+                zoneIndicator.classList.remove('detected');
+                zoneIndicator.classList.add('waiting');
+                networkInput.value = '';
+                networkZonesInput.value = '';
+            }
+        }
+
+        function incrementIP(ip, increment) {
+            if (!ip) return '';
+            
+            const parts = ip.split('.');
+            if (parts.length !== 4) return ip;
+            
+            let lastOctet = parseInt(parts[3]) + increment;
+            
+            // Handle overflow to next octet
+            if (lastOctet > 255) {
+                let thirdOctet = parseInt(parts[2]) + Math.floor(lastOctet / 256);
+                lastOctet = lastOctet % 256;
+                
+                if (thirdOctet > 255) {
+                    let secondOctet = parseInt(parts[1]) + Math.floor(thirdOctet / 256);
+                    thirdOctet = thirdOctet % 256;
+                    
+                    if (secondOctet > 255) {
+                        let firstOctet = parseInt(parts[0]) + Math.floor(secondOctet / 256);
+                        secondOctet = secondOctet % 256;
+                        
+                        if (firstOctet > 255) {
+                            return ip; // Return original if overflow
+                        }
+                        parts[0] = firstOctet.toString();
+                    }
+                    parts[1] = secondOctet.toString();
+                }
+                parts[2] = thirdOctet.toString();
+            }
+            parts[3] = lastOctet.toString();
+            
+            return parts.join('.');
+        }
+
+        function previewConfiguration() {
+            console.log('Preview configuration requested');
+            
+            // Validate configuration first
+            const vmConfigs = validateConfiguration();
+            if (!vmConfigs) {
+                return false; // Validation failed, error already displayed
+            }
+            
+            // Generate and show summary if validation passed
+            if (generateConfigSummary(vmConfigs)) {
+                showConfigSummary();
+                document.getElementById('btnText').textContent = '✅ Confirm & Start Provisioning'; // Update button text
+            }
+        }
+
+        function generateConfigSummary(vmConfigs = null) {
+            console.log('Generating configuration summary');
+            
+            // Clear previous flash messages
+            document.querySelector('.flash-messages').innerHTML = '';
+
+            const template = document.getElementById('template').value;
+            const datacenter = document.getElementById('datacenter').value;
+            const cluster = document.getElementById('cluster').value;
+            const network = document.getElementById('network').value;
+            
+            // Basic validation (detailed validation already done in validateConfiguration)
+            if (!template || !datacenter || !cluster) {
+                displayFlashMessage('Please fill in all required infrastructure fields (Template, Datacenter, Cluster).', 'error');
+                return false;
+            }
+
+            // Check if network zone was detected
+            if (!network) {
+                displayFlashMessage('Network zone not detected. Please select a valid template.', 'error');
+                return false;
+            }
+
+            // Use provided vmConfigs or generate them
+            if (!vmConfigs) {
+                vmConfigs = validateConfiguration();
+                if (!vmConfigs) {
+                    return false;
+                }
+            }
+
+            // Update infrastructure summary
+            document.getElementById('summaryTemplate').textContent = template;
+            document.getElementById('summaryDatacenter').textContent = datacenter;
+            document.getElementById('summaryCluster').textContent = cluster;
+            
+            // Display network zones properly
+            const networkZonesData = JSON.parse(document.getElementById('networkZones').value || '{}');
+            const networkSummary = Object.entries(networkZonesData)
+                .map(([nic, zone]) => `${nic.toUpperCase()}: ${zone}`)
+                .join(', ');
+            document.getElementById('summaryNetwork').textContent = networkSummary || network;
+
+            const isIndividualConfig = document.getElementById('individualConfig').checked;
+            const tableBody = document.getElementById('summaryTableBody');
+            tableBody.innerHTML = '';
+
+            if (isIndividualConfig) {
+                // Individual node configuration - use vmConfigs data
+                let hasValidNodes = false;
+                let totalNodes = 0;
+                
+                // Use vmConfigs if available, otherwise fallback to DOM
+                if (vmConfigs && vmConfigs.length > 0) {
+                    vmConfigs.forEach((vm, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><span class="node-number">${index + 1}</span></td>
+                            <td><span class="node-name">${vm.name}</span></td>
+                            <td><span class="${vm.hostname ? 'hostname' : 'empty-value'}">${vm.hostname || 'Auto-generated'}</span></td>
+                            <td><span class="ip-address">${vm.ips || 'DHCP'}</span></td>
+                        `;
+                        tableBody.appendChild(row);
+                        hasValidNodes = true;
+                        totalNodes++;
+                    });
+                } else {
+                    // Fallback to DOM parsing
+                for (let i = 1; i <= nodeCount; i++) {
+                    const nodeElement = document.getElementById(`node_${i}`);
+                    if (!nodeElement) continue;
+
+                    const vmNameInput = document.querySelector(`input[name="node_${i}_name"]`);
+                    
+                    const vmName = vmNameInput?.value || '';
+                    const hostname = document.querySelector(`input[name="node_${i}_hostname"]`)?.value || '';
+                    
+                    if (!vmName.trim()) {
+                        displayFlashMessage(`Please enter VM name for Node ${i}.`, 'error');
+                        return false;
+                    }
+
+                    // Collect IP addresses
+                    const ips = [];
+                    for (let j = 1; j <= nicCount; j++) {
+                        const ipInput = document.querySelector(`input[name="node_${i}_ip${j}"]`);
+                        const ip = ipInput?.value?.trim() || '';
+                        if (ip && !/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip)) {
+                            displayFlashMessage(`Invalid IP address format for NIC ${j} on Node ${i}.`, 'error');
+                            return false;
+                        }
+                        ips.push(ip || 'DHCP');
+                    }
+
+                    // Create table row
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><span class="node-number">${i}</span></td>
+                        <td><span class="node-name">${vmName}</span></td>
+                        <td><span class="${hostname ? 'hostname' : 'empty-value'}">${hostname || 'Auto-generated'}</span></td>
+                        <td><span class="ip-address">${ips.join(', ')}</span></td>
+                    `;
+                    tableBody.appendChild(row);
+                    hasValidNodes = true;
+                    totalNodes++;
+                    }
+                }
+
+                if (!hasValidNodes) {
+                    displayFlashMessage('Please configure at least one node for individual provisioning.', 'error');
+                    return false;
+                }
+
+                // Add summary row
+                const summaryRow = document.createElement('tr');
+                summaryRow.style.background = '#e3f2fd';
+                summaryRow.style.fontWeight = 'bold';
+                summaryRow.innerHTML = `
+                    <td colspan="4" style="text-align: center; padding: 15px;">
+                        📊 Total VMs to be provisioned: <span style="color: #667eea; font-size: 18px;">${totalNodes}</span>
+                    </td>
+                `;
+                tableBody.appendChild(summaryRow);
+
+            } else {
+                // Bulk configuration
+                const prefix = document.getElementById('prefix').value.trim();
+                const count = parseInt(document.getElementById('count').value) || 1;
+                
+                if (!prefix) {
+                    displayFlashMessage('Please enter a VM name prefix for bulk provisioning.', 'error');
+                    return false;
+                }
+                if (count < 1 || count > 50) {
+                    displayFlashMessage('Number of VMs must be between 1 and 50.', 'error');
+                    return false;
+                }
+
+                // Get starting IP addresses for bulk mode
+                const startingIPs = [];
+                const ipInputs = document.querySelectorAll('#nic-fields input[type="text"]');
+                console.log('🟢 [DEBUG] Found IP inputs for summary:', ipInputs.length);
+                ipInputs.forEach((ipInput, idx) => {
+                    const ip = ipInput.value.trim();
+                    startingIPs[idx] = ip;
+                    console.log(`🟢 [DEBUG] Summary IP ${idx + 1}:`, ip);
+                });
+                console.log('🟢 [DEBUG] Starting IPs for summary:', startingIPs);
+
+                // Generate rows for bulk mode with auto-incrementing IPs
+                const hostnamePrefix = document.getElementById('hostname').value.trim();
+                for (let i = 1; i <= count; i++) {
+                    const vmName = `${prefix}${i.toString().padStart(2, '0')}`;
+                    // Hostname generation logic: ใช้ hostnamePrefix ถ้ามี
+                    let hostname = '';
+                    if (hostnamePrefix) {
+                        hostname = `${hostnamePrefix}${i.toString().padStart(2, '0')}`;
+                    } else {
+                        hostname = `${vmName.toLowerCase()}.${datacenter.toLowerCase().replace(/[^a-z0-9]/g, '')}.local`;
+                    }
+                    // Calculate incremented IPs for this VM
+                    const vmIPs = startingIPs.map(startIP => {
+                        if (!startIP) return 'DHCP';
+                        return incrementIP(startIP, i - 1);
+                    });
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><span class="node-number">${i}</span></td>
+                        <td><span class="node-name">${vmName}</span></td>
+                        <td><span class="hostname">${hostname}</span></td>
+                        <td><span class="ip-address">${vmIPs.join(', ')}</span></td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+
+                // Add summary row for bulk mode
+                const summaryRow = document.createElement('tr');
+                summaryRow.style.background = '#e3f2fd';
+                summaryRow.style.fontWeight = 'bold';
+                summaryRow.innerHTML = `
+                    <td colspan="4" style="text-align: center; padding: 15px;">
+                        📊 Total VMs to be provisioned: <span style="color: #667eea; font-size: 18px;">${count}</span>
+                    </td>
+                `;
+                tableBody.appendChild(summaryRow);
+            }
+
+            return true;
+        }
+
+        function showConfigSummary() {
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            document.getElementById('configSummary').style.display = 'block';
+            document.getElementById('btnText').textContent = '✅ Confirm & Start Provisioning';
+            
+            document.getElementById('configSummary').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+
+        function editConfiguration() {
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.style.display = 'block';
+            });
+            
+            document.getElementById('configSummary').style.display = 'none';
+            document.getElementById('btnText').textContent = '🚀 Start Provisioning';
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('provisionBtn').disabled = false;
+            isProvisioning = false; // Reset provisioning state
+            if (eventSource) { // Close EventSource if open
+                eventSource.close();
+                eventSource = null;
+            }
+            if (provisionTimeout) { // Clear timeout if exists
+                clearTimeout(provisionTimeout);
+                provisionTimeout = null;
+            }
+            document.querySelector('.flash-messages').innerHTML = ''; // Clear flash messages
+        }
+
+        // Start actual provisioning
+        function startActualProvisioning() {
+            // Set timeout based on mode
+            let provisionTimeout = null;
+
+            console.log('Starting actual provisioning...');
+            
+            if (isProvisioning) {
+                console.log('Provisioning already in progress');
+                return;
+            }
+
+            // Validate configuration before starting
+            const vmConfigs = validateConfiguration();
+            if (!vmConfigs) {
+                return;
+            }
+            
+            // Convert vmConfigs to the format expected by initializeStatusTable
+            const vmsForTable = vmConfigs.map(vm => ({
+                name: vm.name,
+                hostname: vm.hostname || vm.name,
+                ips: vm.ips || {},
+                status: 'pending',
+                progress: 0
+            }));
+            
+            // For Individual mode, ensure we have the correct data structure
+            const isIndividualMode = document.getElementById('individualConfig').checked;
+            if (isIndividualMode) {
+                // Individual mode: use the vmConfigs directly as they already have proper structure
+                console.log('Individual mode detected, using vmConfigs directly');
+            } else {
+                // Bulk mode: ensure proper structure
+                console.log('Bulk mode detected, ensuring proper structure');
+            }
+            
+            console.log('vmConfigs from validation:', vmConfigs);
+            console.log('vmsForTable for status table:', vmsForTable);
+            
+            // Clear previous VM status data and table when starting new provisioning
+            vmStatusData = {};
+            
+            // Clear the status table body
+            const statusTableBody = document.getElementById('statusTableBody');
+            if (statusTableBody) {
+                statusTableBody.innerHTML = '';
+                console.log('🟢 [DEBUG] Cleared status table body');
+            }
+            
+            // Initialize vmStatusData for new VMs
+            vmsForTable.forEach(vm => {
+                const key = (vm.name || '').trim().toLowerCase();
+                vmStatusData[key] = {
+                    name: vm.name,
+                    hostname: vm.hostname || `${vm.name}.local`,
+                    ips: vm.ips || {},
+                    status: 'pending',
+                    progress: 0
+                };
+            });
+            console.log('🔧 Pre-initialized vmStatusData:', vmStatusData);
+            console.log('🔧 vmStatusData keys:', Object.keys(vmStatusData));
+            
+            // สร้าง status table ทันที (status/progress จะ update แบบ realtime จาก log)
+            console.log('🟢 [DEBUG] About to call initializeStatusTable with:', vmsForTable);
+            console.log('🟢 [DEBUG] vmStatusData before initializeStatusTable:', vmStatusData);
+            console.log('🟢 [DEBUG] vmStatusData keys before initializeStatusTable:', Object.keys(vmStatusData));
+            initializeStatusTable(vmsForTable);
+            console.log('🟢 [DEBUG] initializeStatusTable completed');
+            
+            // Verify vmStatusData is still populated after initializeStatusTable
+            console.log('🟢 [DEBUG] vmStatusData after initializeStatusTable:', vmStatusData);
+            console.log('🟢 [DEBUG] vmStatusData keys after initializeStatusTable:', Object.keys(vmStatusData));
+            
+            // Debug: Check if elements were created
+            vmsForTable.forEach(vm => {
+                const statusElement = document.getElementById(`status-${vm.name}`);
+                const progressElement = document.getElementById(`progress-${vm.name}`);
+                const progressTextElement = document.getElementById(`progress-text-${vm.name}`);
+                console.log(`🟢 [DEBUG] Elements for ${vm.name}:`, {
+                    statusElement: !!statusElement,
+                    progressElement: !!progressElement,
+                    progressTextElement: !!progressTextElement
+                });
+            });
+            
+            vmsForTable.forEach(vm => {
+                console.log('Calling updateVMIPsCell for:', vm.name);
+                updateVMIPsCell(vm.name);
+            });
+
+            isProvisioning = true;
+            const button = document.getElementById('provisionBtn');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const logs = document.getElementById('logs');
+            
+            button.disabled = true;
+            btnText.textContent = 'Provisioning...';
+            spinner.style.display = 'block';
+            
+            logs.textContent = '🚀 Starting VM provisioning...\n';
+            logs.textContent += '📋 Configuration validated successfully\n';
+            
+            // Display detected network zones
+            const networkZonesData = JSON.parse(document.getElementById('networkZones').value || '{}');
+            logs.textContent += '🌐 Detected network zones:\n';
+            Object.entries(networkZonesData).forEach(([nic, zone]) => {
+                logs.textContent += `   ${nic.toUpperCase()}: ${zone}\n`;
+            });
+            
+            // -------------------------------------------------------------
+            // Connect to EventSource for real-time logs
+            // -------------------------------------------------------------
+            if (eventSource) {
+                eventSource.close(); // Close existing connection if any
+            }
+            eventSource = new EventSource('/stream');
+
+            eventSource.onmessage = function(event) {
+                const logMessage = event.data;
+                console.log('=== EventSource.onmessage START ===');
+                console.log('📨 EventSource received message:', logMessage);
+                console.log('📨 EventSource message type:', typeof logMessage);
+                console.log('📨 EventSource message length:', logMessage.length);
+                console.log('📨 EventSource message includes VM:', logMessage.includes('VM'));
+                console.log('📨 EventSource message includes 🚀:', logMessage.includes('🚀'));
+                console.log('🟢 [DEBUG] Raw log message:', logMessage);
+                console.log('🟢 [DEBUG] Log message starts with:', logMessage.substring(0, 50));
+                console.log('🟢 [DEBUG] Log message ends with:', logMessage.substring(Math.max(0, logMessage.length - 50)));
+                
+                if (logMessage.trim() !== '') {
+                    logs.textContent += logMessage + '\n';
+                    logs.scrollTop = logs.scrollHeight;
+
+                    // Update VM status table based on log message
+                    console.log('🟢 [DEBUG] Calling parseLogForVMUpdates with:', logMessage);
+                    console.log('🟢 [DEBUG] Current vmStatusData before parseLogForVMUpdates:', vmStatusData);
+                    parseLogForVMUpdates(logMessage);
+                    console.log('🟢 [DEBUG] Current vmStatusData after parseLogForVMUpdates:', vmStatusData);
+                    
+                    // Debug: Check if this is a completion message
+                    if (logMessage.includes('Demo provisioning completed successfully') || logMessage.includes('✔ Demo provisioning completed successfully')) {
+                        console.log('🎉 COMPLETION MESSAGE DETECTED!');
+                    }
+                    
+                    // Debug VM status table every 10 messages
+                    if (Math.random() < 0.1) { // 10% chance to debug
+                        debugVMStatusTable();
+                    }
+
+                    // Check if all VMs are completed (success or failed)
+                    if (vmStatusData && Object.keys(vmStatusData).length > 0) {
+                        const allCompleted = Object.values(vmStatusData).every(vm => 
+                            vm.status === 'success' || vm.status === 'failed'
+                        );
+                        
+                        if (allCompleted) {
+                            console.log('All VMs completed, resetting UI...');
+                            
+                            // Show completion popup/summary
+                            setTimeout(() => {
+                                const summary = {
+                                    total: Object.keys(vmStatusData).length,
+                                    success: Object.values(vmStatusData).filter(vm => vm.status === 'success').length,
+                                    failed: Object.values(vmStatusData).filter(vm => vm.status === 'failed').length,
+                                    pending: Object.values(vmStatusData).filter(vm => vm.status === 'pending').length
+                                };
+                                console.log('EventSource: Calling showCompletionMenu with summary:', summary);
+                                showCompletionMenu(summary);
+                                displayFlashMessage("Provisioning completed successfully!", "success");
+                            }, 1000);
+                            
+                            // Close EventSource after completion
+                            if (eventSource) {
+                                eventSource.close();
+                                eventSource = null;
+                            }
+                            
+                            // Re-enable button
+                            isProvisioning = false;
+                            button.disabled = false;
+                            btnText.textContent = '🚀 Start Provisioning';
+                            spinner.style.display = 'none';
+                            
+                            // Clear timeout
+                            if (provisionTimeout) {
+                                clearTimeout(provisionTimeout);
+                                provisionTimeout = null;
+                            }
+                        }
+                    }
+                }
+                console.log('=== EventSource.onmessage END ===');
+            };
+
+            eventSource.onerror = function(event) {
+                console.error('EventSource error:', event);
+                logs.textContent += '\n❌ Error connecting to log stream. Provisioning might have failed or stream disconnected.\n';
+                logs.scrollTop = logs.scrollHeight;
+                
+                // Try to fetch VMs data even if stream failed
+                        setTimeout(() => {
+                    fetchProvisionedVMs().then((vms) => {
+                        if (vms && vms.length > 0) {
+                            logs.textContent += '\n📊 Attempting to fetch final results...\n';
+                            updateCompletionSummary(vms);
+                        }
+                    }).catch((error) => {
+                        console.error('Error fetching VMs data:', error);
+                        logs.textContent += '\n⚠️ Could not fetch final results.\n';
+                    });
+                }, 2000);
+                
+                // Re-enable button after error
+                setTimeout(() => {
+                isProvisioning = false;
+                button.disabled = false;
+                btnText.textContent = '🚀 Start Provisioning';
+                spinner.style.display = 'none';
+                }, 3000);
+            };
+            // -------------------------------------------------------------
+
+            // Set timeout based on Demo/Production Mode
+            // Demo Mode: Extended timeout (5 minutes) since it's simulation
+            // Production Mode: No timeout (wait until provisioning completes)
+            let isDemoMode = false;
+            try {
+                isDemoMode = sessionStorage.getItem('demo_mode') === 'true';
+            } catch (e) {
+                console.log('Could not access demo mode from session storage, defaulting to production mode');
+            }
+            if (isDemoMode) {
+                provisionTimeout = 120000; // 2 minutes for demo mode (ลดจาก 5 นาที)
+            } else {
+                // Production Mode: ไม่ต้องตั้ง timeout, รอจนเสร็จจริง
+                provisionTimeout = null;
+                    }
+
+
+            // Collect form data for asynchronous submission
+            const formElement = document.getElementById('provisionForm');
+            const formData = new FormData(formElement);
+            const requestData = {};
+
+            // Populate requestData from formData
+            for (let [key, value] of formData.entries()) {
+                requestData[key] = value;
+            }
+
+            // Special handling for individual config mode
+            const isIndividualConfig = document.getElementById('individualConfig').checked;
+            if (isIndividualConfig) {
+                // Ensure the backend knows it's individual config
+                requestData['individualConfig'] = 'on'; // Flask expects 'on' for checkbox if checked
+
+                // Collect individual node data
+                const nodesConfig = [];
+                if (vmConfigs && vmConfigs.length > 0) {
+                    // Use validated vmConfigs data
+                    vmConfigs.forEach(vm => {
+                        // Convert ips string back to object for backend
+                        const nodeIps = {};
+                        if (vm.ips && vm.ips !== '-' && vm.ips !== 'DHCP') {
+                            const ipArray = vm.ips.split(', ');
+                            ipArray.forEach((ip, index) => {
+                                if (ip && ip !== 'DHCP') {
+                                    nodeIps[`net${index + 1}`] = ip.trim();
+                                }
+                            });
+                        }
+                        
+                        nodesConfig.push({
+                            name: vm.name,
+                            hostname: vm.hostname || vm.name,
+                            ips: nodeIps
+                        });
+                    });
+                } else {
+                    // Fallback to DOM parsing
+                for (let i = 1; i <= nodeCount; i++) {
+                    const nodeElement = document.getElementById(`node_${i}`);
+                    if (nodeElement) {
+                        const vmName = document.querySelector(`input[name="node_${i}_name"]`)?.value || '';
+                        const hostname = document.querySelector(`input[name="node_${i}_hostname"]`)?.value || '';
+                        const nodeIps = {};
+                        for (let j = 1; j <= nicCount; j++) {
+                            const ip = document.querySelector(`input[name="node_${i}_ip${j}"]`)?.value || '';
+                            if (ip) {
+                                nodeIps[`net${j}`] = ip;
+                            }
+                        }
+                        nodesConfig.push({
+                            name: vmName,
+                            hostname: hostname,
+                            ips: nodeIps
+                        });
+                        }
+                    }
+                }
+                // Send individual node config as a JSON string
+                requestData['individual_nodes_data'] = JSON.stringify(nodesConfig);
+
+                // Remove bulk-related fields if they were collected (though they should be hidden)
+                delete requestData['prefix'];
+                delete requestData['count'];
+                for (let i = 1; i <= nicCount; i++) {
+                    delete requestData[`ip${i}`];
+                }
+            } else {
+                // Bulk mode: do NOT remove prefix, count, ip1, ip2, ...
+                // Just ensure individual_nodes_data is not sent
+                delete requestData['individual_nodes_data'];
+                requestData['individualConfig'] = '';
+            }
+
+            // --- Debugging: Log the requestData before sending ---
+            console.log('🟢 [DEBUG] isIndividualConfig:', isIndividualConfig);
+            console.log('🟢 [DEBUG] requestData before sending:', requestData);
+            console.log('🟢 [DEBUG] requestData keys:', Object.keys(requestData));
+            console.log('🟢 [DEBUG] prefix in requestData:', requestData['prefix']);
+            console.log('🟢 [DEBUG] count in requestData:', requestData['count']);
+            console.log('🟢 [DEBUG] ip1 in requestData:', requestData['ip1']);
+            console.log('🟢 [DEBUG] individualConfig in requestData:', requestData['individualConfig']);
+
+            // Send the form data asynchronously using fetch
+            fetch('/provision', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded', // Standard for form submissions
+                    'X-Requested-With': 'XMLHttpRequest' // Identify as AJAX request
+                },
+                body: new URLSearchParams(requestData).toString() // Convert object to URL-encoded string
+            })
+            .then(response => {
+                // Check if the response is JSON before parsing
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    // If not JSON, it might be a redirect or raw HTML (unexpected for AJAX POST)
+                    console.error("Received non-JSON response from /provision. Check server logs for errors or unexpected redirects.");
+                    // Attempt to read as text for more info
+                    return response.text().then(text => {
+                        console.error("Server response text:", text);
+                        displayFlashMessage('Unexpected server response. Check browser console and server logs.', 'error');
+                        throw new Error("Unexpected response from server. Not JSON. See console for details.");
+                    });
+                }
+            })
+            .then(data => {
+                console.log('Provisioning request sent successfully; Backend response:', data);
+                // Display messages from backend (e.g., flash messages)
+                if (data && data.message) {
+                    displayFlashMessage(data.message, data.status || 'info'); // Use data.status for category
+                    logs.textContent += `\nBackend Message: ${data.message}\n`;
+                    logs.scrollTop = logs.scrollHeight;
+                }
+                if (data && data.status === 'error' && data.error) {
+                    displayFlashMessage(data.error, 'error');
+                    logs.textContent += `\n❌ Backend Error: ${data.error}\n`;
+                    logs.scrollTop = logs.scrollHeight;
+                    // Re-enable button and spinner on backend error
+                    isProvisioning = false;
+                    button.disabled = false;
+                    btnText.textContent = '🚀 Start Provisioning';
+                    spinner.style.display = 'none';
+                    // Clear the timeout on backend error response
+                    if (provisionTimeout) {
+                        clearTimeout(provisionTimeout);
+                        provisionTimeout = null;
+                    }
+                    if (eventSource) {
+                        eventSource.close();
+                        eventSource = null;
+                    }
+                }
+                if (data && data.vms) {
+                    lastProvisionedVMs = data.vms;
+                }
+            })
+            .catch(error => {
+                console.error('Error sending provisioning request via fetch:', error);
+                displayFlashMessage(`Failed to send provisioning request: ${error.message}`, 'error');
+                logs.textContent += `\n❌ Failed to send provisioning request: ${error.message}\n`;
+                logs.scrollTop = logs.scrollHeight;
+                // Re-enable button and spinner on fetch error
+                isProvisioning = false;
+                button.disabled = false;
+                btnText.textContent = '🚀 Start Provisioning';
+                spinner.style.display = 'none';
+                // Clear the timeout on fetch error
+                if (provisionTimeout) {
+                    clearTimeout(provisionTimeout);
+                    provisionTimeout = null;
+                }
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+            });
+
+            // เพิ่ม fallback timeout หลัง start provisioning
+            setTimeout(() => {
+                if (isProvisioning) {
+                    isProvisioning = false;
+                    const button = document.getElementById('provisionBtn');
+                    const btnText = document.getElementById('btnText');
+                    const spinner = document.getElementById('spinner');
+                    if (button) button.disabled = false;
+                    if (btnText) btnText.textContent = '🚀 Start Provisioning';
+                    if (spinner) spinner.style.display = 'none';
+                    if (eventSource) {
+                        eventSource.close();
+                        eventSource = null;
+                    }
+                    displayFlashMessage('Provisioning timed out. Please try again.', 'error');
+                }
+            }, 300000); // 5 นาที
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = 'Logs cleared.\nReady for new provisioning task...\n';
+        }
+
+        // Input validation (visual feedback)
+        document.addEventListener('input', function(e) {
+            if (e.target.id === 'prefix') {
+                const value = e.target.value;
+                const isValid = /^[a-zA-Z0-9\-_]*$/.test(value);
+                
+                if (!isValid) {
+                    e.target.style.borderColor = '#ff6b6b';
+                    e.target.style.background = '#fff5f5';
+                } else {
+                    e.target.style.borderColor = '#e1e5e9';
+                    e.target.style.background = '#f8f9fa';
+                }
+            }
+            
+            if (e.target.name && (e.target.name.startsWith('ip') || e.target.name.includes('_ip'))) {
+                const value = e.target.value;
+                if (value) {
+                    const isValid = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(value);
+                    
+                    if (!isValid) {
+                        e.target.style.borderColor = '#ff6b6b';
+                        e.target.style.background = '#fff5f5';
+                    } else {
+                        e.target.style.borderColor = '#28a745';
+                        e.target.style.background = '#f8fff8';
+                    }
+                } else {
+                    e.target.style.borderColor = '#e1e5e9';
+                    e.target.style.background = 'white';
+                }
+            }
+        });
+
+        // Global functions
+        window.removeNode = function(nodeNumber) {
+            console.log('🟢 [DEBUG] Removing node:', nodeNumber);
+            const nodeElement = document.getElementById(`node_${nodeNumber}`);
+            if (nodeElement) {
+                nodeElement.remove();
+                
+                // Renumber remaining nodes
+                const remainingNodes = document.querySelectorAll('.node-config');
+                remainingNodes.forEach((node, index) => {
+                    const newNumber = index + 1;
+                    const nodeNumberSpan = node.querySelector('.node-number');
+                    const nodeTitle = node.querySelector('.node-title');
+                    const removeBtn = node.querySelector('.remove-node');
+                    
+                    if (nodeNumberSpan) nodeNumberSpan.textContent = newNumber;
+                    if (nodeTitle) nodeTitle.textContent = `Node ${newNumber} Configuration`;
+                    if (removeBtn) {
+                        removeBtn.onclick = () => window.removeNode(newNumber);
+                        removeBtn.textContent = newNumber > 1 ? '🗑️ Remove' : '';
+                    }
+                    
+                    // Update IDs and names
+                    node.id = `node_${newNumber}`;
+                    node.querySelectorAll('input').forEach(input => {
+                        const oldName = input.name;
+                        const oldId = input.id;
+                        
+                        if (oldName.includes('node_')) {
+                            const fieldName = oldName.split('_').slice(2).join('_');
+                            input.name = `node_${newNumber}_${fieldName}`;
+                            input.id = `node_${newNumber}_${fieldName}`;
+                        }
+                    });
+                });
+                
+                window.nodeCount = remainingNodes.length;
+                console.log('🟢 [DEBUG] Node removed, remaining nodes:', window.nodeCount);
+                setTimeout(() => updateRequiredAttributes(), 100);
+            }
+        };
+        window.editConfiguration = editConfiguration;
+        window.previewConfiguration = previewConfiguration;
+        window.clearLogs = clearLogs;
+        window.detectNetworkZone = detectNetworkZone;
+
+        console.log('provision.html script fully loaded and parsed.'); // Marker for debugging
+
+        function updateNodeLabels() {
+            const nodeElements = document.querySelectorAll('.node-config');
+            nodeElements.forEach((nodeElement, idx) => {
+                const nodeNumberSpan = nodeElement.querySelector('.node-number');
+                if (nodeNumberSpan) nodeNumberSpan.textContent = idx + 1;
+                const nodeTitle = nodeElement.querySelector('.node-title');
+                if (nodeTitle) nodeTitle.innerHTML = `<span class="node-number">${idx + 1}</span> Node ${idx + 1} Configuration`;
+            });
+        }
+
+        // เพิ่มฟังก์ชัน fetchProvisionedVMs() เพื่อดึงข้อมูล VM status จาก backend (Demo Mode)
+        async function fetchProvisionedVMs() {
+            try {
+                const response = await fetch('/api/last-provision-vms');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('DEBUG: /api/last-provision-vms response', data);
+                    if (data && Array.isArray(data.vms)) {
+                        console.log('DEBUG: vms array from backend', data.vms);
+                        initializeStatusTable(data.vms.map(vm => ({
+                            name: vm.name,
+                            hostname: vm.hostname,
+                            ips: vm.ips,
+                            status: vm.status,
+                            progress: vm.progress
+                        })));
+                        return data.vms;
+                    }
+                }
+                return [];
+            } catch (e) {
+                console.error('Failed to fetch provisioned VMs:', e);
+                return [];
+            }
+        }
+
+        // เรียก fetchProvisionedVMs() หลัง provisioning เสร็จ (Demo Mode)
+        // ตัวอย่าง: fetchProvisionedVMs();
+
+        // Update completion summary with VMs data
+        function updateCompletionSummary(vms) {
+            fetchProvisionedVMs().then((latestVMs) => {
+                const vmsToUse = (latestVMs && latestVMs.length > 0) ? latestVMs : vms;
+                initializeStatusTable(vmsToUse);
+                vmsToUse.forEach(vm => updateVMIPsCell(vm.name));
+                // Reset button/spinner
+                isProvisioning = false;
+                const button = document.getElementById('provisionBtn');
+                const btnText = document.getElementById('btnText');
+                const spinner = document.getElementById('spinner');
+                if (button) button.disabled = false;
+                if (btnText) btnText.textContent = '🚀 Start Provisioning';
+                if (spinner) spinner.style.display = 'none';
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+                // ... show summary ...
+            });
+        }
+
+        // ===== DEBUGGING FUNCTIONS =====
+        function debugVMStatusTable() {
+            console.log('=== VM Status Table Debug ===');
+            console.log('vmStatusData:', vmStatusData);
+            console.log('Available VMs:', Object.keys(vmStatusData));
+            
+            for (const vmName in vmStatusData) {
+                const statusElement = document.getElementById(`status-${vmName}`);
+                const progressElement = document.getElementById(`progress-${vmName}`);
+                const progressTextElement = document.getElementById(`progress-text-${vmName}`);
+                
+                console.log(`VM ${vmName}:`, {
+                    statusElement: !!statusElement,
+                    progressElement: !!progressElement,
+                    progressTextElement: !!progressTextElement,
+                    currentStatus: vmStatusData[vmName].status,
+                    currentProgress: vmStatusData[vmName].progress
+                });
+            }
+            console.log('=== End Debug ===');
+        }
+        
+        // ===== VALIDATION FUNCTIONS =====
+    </script>
+</body>
+</html>

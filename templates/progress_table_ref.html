@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Table Reference</title>
+    <style>
+        /* Status Table Styles */
+        .status-table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .status-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .status-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .status-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .status-table tr:hover {
+            background-color: #f0f2f5;
+        }
+        
+        /* VM Status Classes */
+        .vm-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+            min-width: 80px;
+        }
+        
+        .vm-status.pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .vm-status.provisioning {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .vm-status.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .vm-status.failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .progress-fill.success {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .progress-fill.failed {
+            background: linear-gradient(90deg, #dc3545 0%, #fd7e14 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Progress Table Reference Implementation</h1>
+        
+        <!-- Status Table -->
+        <div class="status-table-container" id="statusTableContainer">
+            <div class="card-header">
+                <h3>🖥️ VM Provisioning Status</h3>
+            </div>
+            <table class="status-table" id="statusTable">
+                <thead>
+                    <tr>
+                        <th>VM Name</th>
+                        <th>Hostname</th>
+                        <th>Network IPs</th>
+                        <th>Status</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody id="statusTableBody">
+                    <!-- Status rows will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Demo Controls -->
+        <div style="margin: 20px 0;">
+            <button onclick="demoProvisioning()">🚀 Start Demo Provisioning</button>
+            <button onclick="clearTable()">🗑️ Clear Table</button>
+        </div>
+    </div>
+
+    <script>
+        // ===== PROGRESS TABLE REFERENCE IMPLEMENTATION =====
+        
+        // Global VM status data storage
+        let vmStatusData = {};
+        
+        /**
+         * Initialize the status table with VM configurations
+         * @param {Array} vmConfigs - Array of VM configuration objects
+         */
+        function initializeStatusTable(vmConfigs) {
+            console.log('🔧 Initializing status table with configs:', vmConfigs);
+            
+            const statusContainer = document.getElementById('statusTableContainer');
+            const statusTableBody = document.getElementById('statusTableBody');
+            
+            if (!statusContainer || !statusTableBody) {
+                console.error('❌ Status table elements not found!');
+                return;
+            }
+            
+            // Clear existing data
+            vmStatusData = {};
+            statusTableBody.innerHTML = '';
+            
+            // Create status rows for each VM
+            vmConfigs.forEach(vmConfig => {
+                const vmName = vmConfig.name;
+                
+                // Initialize VM status data
+                vmStatusData[vmName] = {
+                    name: vmName,
+                    hostname: vmConfig.hostname || `${vmName.toLowerCase()}.local`,
+                    ips: vmConfig.ips || {},
+                    status: vmConfig.status || 'pending',
+                    progress: vmConfig.progress || 0
+                };
+                
+                // Format IPs for display
+                let ipsDisplay = '-';
+                if (vmStatusData[vmName].ips) {
+                    if (typeof vmStatusData[vmName].ips === 'string') {
+                        ipsDisplay = vmStatusData[vmName].ips;
+                    } else if (typeof vmStatusData[vmName].ips === 'object') {
+                        const ipValues = Object.values(vmStatusData[vmName].ips).filter(ip => ip);
+                        ipsDisplay = ipValues.length > 0 ? ipValues.join(', ') : 'DHCP';
+                    }
+                } else {
+                    ipsDisplay = 'DHCP';
+                }
+                
+                // Create table row
+                const row = document.createElement('tr');
+                row.id = `status-row-${vmName}`;
+                row.innerHTML = `
+                    <td class="node-name">${vmName}</td>
+                    <td class="hostname">${vmStatusData[vmName].hostname}</td>
+                    <td>${ipsDisplay}</td>
+                    <td>
+                        <div class="vm-status ${vmStatusData[vmName].status}" id="status-${vmName}">
+                            ${getStatusText(vmStatusData[vmName].status)}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-${vmName}" style="width: ${vmStatusData[vmName].progress}%"></div>
+                        </div>
+                        <small id="progress-text-${vmName}">${getProgressText(vmStatusData[vmName].progress)}</small>
+                    </td>
+                `;
+                statusTableBody.appendChild(row);
+            });
+            
+            // Show status table
+            statusContainer.style.display = 'block';
+            console.log('✅ Status table initialized successfully');
+        }
+        
+        /**
+         * Update VM status and progress
+         * @param {string} vmName - Name of the VM
+         * @param {string} status - New status (pending, provisioning, success, failed)
+         * @param {number} progress - Progress percentage (0-100)
+         * @param {string} message - Optional message
+         */
+        function updateVMStatus(vmName, status, progress = null, message = null) {
+            console.log(`🔄 updateVMStatus called for ${vmName}:`, { status, progress, message });
+            
+            // Ensure VM exists in status data
+            if (!vmStatusData[vmName]) {
+                console.log(`➕ Adding ${vmName} to vmStatusData`);
+                vmStatusData[vmName] = {
+                    name: vmName,
+                    hostname: `${vmName}.local`,
+                    ips: {},
+                    status: 'pending',
+                    progress: 0
+                };
+            }
+            
+            // Get DOM elements
+            const statusElement = document.getElementById(`status-${vmName}`);
+            const progressElement = document.getElementById(`progress-${vmName}`);
+            const progressTextElement = document.getElementById(`progress-text-${vmName}`);
+            
+            // Update status data
+            vmStatusData[vmName].status = status;
+            if (progress !== null) {
+                vmStatusData[vmName].progress = progress;
+            }
+            
+            // Update DOM elements
+            if (statusElement) {
+                statusElement.className = `vm-status ${status}`;
+                statusElement.textContent = getStatusText(status);
+            }
+            
+            if (progressElement) {
+                progressElement.style.width = `${vmStatusData[vmName].progress}%`;
+                
+                // Add success/failed classes for progress bar
+                progressElement.className = 'progress-fill';
+                if (status === 'success') {
+                    progressElement.classList.add('success');
+                } else if (status === 'failed') {
+                    progressElement.classList.add('failed');
+                }
+            }
+            
+            if (progressTextElement) {
+                progressTextElement.textContent = getProgressText(vmStatusData[vmName].progress);
+            }
+            
+            console.log(`✅ Updated VM ${vmName}: status=${status}, progress=${vmStatusData[vmName].progress}%`);
+        }
+        
+        /**
+         * Parse log message to extract VM status updates
+         * @param {string} message - Log message
+         * @returns {Object|null} - {vmName, status, progress} or null
+         */
+        function parseLogMessageForVMUpdates(message) {
+            const patterns = [
+                // VM started
+                { regex: /🚀 Starting VM (\d+)\/(\d+): ([^\s]+)/, status: 'provisioning', progress: 0 },
+                // VM cloned successfully
+                { regex: /✅ VM ([^\s]+) cloned successfully/, status: 'provisioning', progress: 75 },
+                // VM powered on
+                { regex: /🟢 VM ([^\s]+) powered on successfully/, status: 'provisioning', progress: 90 },
+                // VM ready
+                { regex: /✅ Guest OS boot completed - VM ([^\s]+) ready/, status: 'success', progress: 100 },
+                // VM failed
+                { regex: /❌ ([^\s]+) clone failed/, status: 'failed', progress: null },
+                // Progress updates
+                { regex: /📈 Clone progress: (\d+)% - VM ([^\s]+)/, status: 'provisioning', progress: null }
+            ];
+            
+            for (const pattern of patterns) {
+                const match = message.match(pattern.regex);
+                if (match) {
+                    if (pattern.regex.source.includes('progress')) {
+                        const progress = parseInt(match[1]);
+                        const vmName = match[2];
+                        return { vmName, status: pattern.status, progress };
+                    } else if (pattern.regex.source.includes('failed')) {
+                        const vmName = match[1];
+                        return { vmName, status: pattern.status, progress: null };
+                    } else if (pattern.regex.source.includes('ready') || pattern.regex.source.includes('successfully')) {
+                        const vmName = match[1];
+                        return { vmName, status: pattern.status, progress: pattern.progress };
+                    } else if (pattern.regex.source.includes('Starting VM')) {
+                        const vmName = match[3];
+                        return { vmName, status: pattern.status, progress: pattern.progress };
+                    }
+                }
+            }
+            
+            return null;
+        }
+        
+        /**
+         * Helper function to get status text
+         */
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Pending',
+                'provisioning': 'Provisioning',
+                'success': 'Success',
+                'failed': 'Failed'
+            };
+            return statusMap[status] || status;
+        }
+        
+        /**
+         * Helper function to get progress text
+         */
+        function getProgressText(progress) {
+            if (progress === 100) return 'Complete!';
+            if (progress === 0) return 'Waiting...';
+            return `${progress}%`;
+        }
+        
+        /**
+         * Clear the status table
+         */
+        function clearTable() {
+            vmStatusData = {};
+            const statusTableBody = document.getElementById('statusTableBody');
+            if (statusTableBody) {
+                statusTableBody.innerHTML = '';
+            }
+            console.log('🗑️ Status table cleared');
+        }
+        
+        /**
+         * Demo provisioning function
+         */
+        function demoProvisioning() {
+            // Example VM configs
+            const vmConfigs = [
+                { name: 'demo01', hostname: 'demo01.local', ips: { net1: '192.168.1.101', net2: '192.168.2.101' } },
+                { name: 'demo02', hostname: 'demo02.local', ips: { net1: '192.168.1.102', net2: '192.168.2.102' } },
+                { name: 'demo03', hostname: 'demo03.local', ips: { net1: '192.168.1.103', net2: '192.168.2.103' } }
+            ];
+            
+            // Initialize table
+            initializeStatusTable(vmConfigs);
+            
+            // Simulate provisioning process
+            vmConfigs.forEach((vmConfig, index) => {
+                setTimeout(() => {
+                    updateVMStatus(vmConfig.name, 'provisioning', 0);
+                }, index * 1000);
+                
+                setTimeout(() => {
+                    updateVMStatus(vmConfig.name, 'provisioning', 25);
+                }, index * 1000 + 1000);
+                
+                setTimeout(() => {
+                    updateVMStatus(vmConfig.name, 'provisioning', 50);
+                }, index * 1000 + 2000);
+                
+                setTimeout(() => {
+                    updateVMStatus(vmConfig.name, 'provisioning', 75);
+                }, index * 1000 + 3000);
+                
+                setTimeout(() => {
+                    updateVMStatus(vmConfig.name, 'success', 100);
+                }, index * 1000 + 4000);
+            });
+        }
+        
+        // Initialize with empty table
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📋 Progress table reference loaded');
+        });
+    </script>
+</body>
+</html> 
